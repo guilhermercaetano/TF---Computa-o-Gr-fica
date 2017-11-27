@@ -89,6 +89,7 @@ struct shape
     shape_type Type;
     v3f Origin;
     v3f OffsetFromOrigin;
+    v3f RotationNormal;
     bases Bases;
     texture *Texture;
     

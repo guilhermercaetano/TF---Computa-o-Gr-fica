@@ -149,6 +149,8 @@ struct entity_enemy
     v3f Acceleration;
     float ShotVelocity;
     v3f RightArmDir;
+    
+    float ArmHeight;
 };
 
 struct entity_player
@@ -168,6 +170,8 @@ struct entity_player
     v3f Acceleration;
     float ShotVelocity;
     v3f RightArmDir;
+    
+    float ArmHeight;
 };
 
 struct entity

@@ -484,11 +484,14 @@ void UpdateAndDrawEntity(entity *Entity)
         {
             if (Entity->Header.State & EntityState_Active)
             {
+                
                 entity_player *Player = &Entity->Player;
+#if 0
                 v3f RightArmOrigin = Player->Body.RightArm.Origin;
                 v3f ArmOrigin = CoordinateChange(Player->Bases.BaseMatrix, RightArmOrigin);
                 Player->RightArmDir = Game.Input.Mouse.Position - (Player->Position + ArmOrigin);
                 MovePlayerArm(Player, Player->RightArmDir);
+#endif
                 
                 for (int i = 0; i < ArrayCount(Player->Body.Components); i++)
                 {
@@ -521,7 +524,8 @@ void UpdateAndDrawEntity(entity *Entity)
                     float AngleInRadians = Entity->Player.Body.Components[i].Bases.Angle;
                     glPushMatrix();
                     glTranslatef(Position.x, Position.y, Position.z);
-                    glRotatef(RadsToDegrees(AngleInRadians), 0, 0, 1);
+                    v3f RotNormal = Entity->Player.Body.Components[i].RotationNormal;
+                    glRotatef(RadsToDegrees(AngleInRadians), RotNormal.x, RotNormal.y, RotNormal.z);
                     
                     if (Component.Texture)
                     {
@@ -609,8 +613,8 @@ void UpdateAndDrawEntity(entity *Entity)
                 if (Entity->Enemy.CyclesToShoot == 0)
                 {
                     Entity->Enemy.CyclesToShoot = Game.EnemyCountToShoot;
-                    ASSERT(Entity->Enemy.Body.RightArm.Bases.Angle == 0);
-                    CreateBulletEntity(GlobalBullets, Entity_Enemy, 100, 1.4f, 
+                    //ASSERT(Entity->Enemy.Body.RightArm.Bases.Angle == 0);
+                    CreateBulletEntity(GlobalBullets, Entity_Enemy, 100, Entity->Enemy.ArmHeight, 
                                        Entity->Enemy.ShotVelocity, Entity->Enemy.Bases, Entity->Enemy.Body.RightArm,
                                        Entity->Enemy.Position);
                     
@@ -1453,7 +1457,7 @@ inline void ProcessInput(input Input, entity_player *Player)
     
     if (ShotFired && !Player->Jumping && !Player->Dynamics.PlatformAllow)
     {
-        CreateBulletEntity(GlobalBullets, Entity_Player, 100, 1.4f, Player->ShotVelocity,
+        CreateBulletEntity(GlobalBullets, Entity_Player, 100, Player->ArmHeight, Player->ShotVelocity,
                            Player->Bases, Player->Body.RightArm, Player->Position);
         
         if ((GlobalBullets-SaveGlobalBullets) < 99)

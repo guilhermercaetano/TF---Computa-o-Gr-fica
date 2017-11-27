@@ -20,8 +20,7 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
     v3f ArmOrigin = CoordinateChange(EntityBases.BaseMatrix, BodyPart.Origin);
     v3f ArmOffset01 = CoordinateChange(EntityBases.BaseMatrix, 
                                        V3f(0, BodyPart.Rectangle.Height, 0));
-    v3f ArmOffset = CoordinateChange(BodyPart.Bases.BaseMatrix, 
-                                     ArmOffset01);
+    v3f ArmOffset = CoordinateChange(BodyPart.Bases.BaseMatrix, ArmOffset01);
     
     Entity->Bullet.Position = Origin + ArmOrigin + ArmOffset;
     
@@ -37,7 +36,7 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
     Entity->Bullet.Shape.Origin = v3f{0.0f, 0.0f, 0.0f};
     Entity->Bullet.CastingEntityType = CastingEntityType;
     
-    CalcShapePoints(&Entity->Bullet.Shape, Height);
+    CalcShapePoints(&Entity->Bullet.Shape, 0.0f);
     
     return &Entity->Bullet;
 }
@@ -59,13 +58,6 @@ CreateEntityStatic(entity *Entity, entity_type Type, svg_color_names Color, int 
     CalcShapePoints(&Entity->Static.Shape, 0);
     return Entity;
 }
-
-
-shape * CreateLeg(shape *RightLeg, svg_color_names Color, shape_type ShapeType)
-{
-    
-}
-
 
 entity_player *
 CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
@@ -107,11 +99,31 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Player.Body.RightArm.Box.Height = 10;
     Entity->Player.Body.RightArm.Box.Depth = 30;
     
-    Entity->Player.Body.RightArm.Bases.xAxis = v3f{1.0f, 0.0f, 0.0f};
-    Entity->Player.Body.RightArm.Bases.yAxis = v3f{0.0f, 1.0f, 0.0f};
-    Entity->Player.Body.RightArm.Bases.zAxis = v3f{0.0f, 0.0f, 1.0f};
+    
+#if 0
+    Entity->Player.Body.RightArm.Bases.xAxis = v3f{1.0, 0.0, 0.0};
+    Entity->Player.Body.RightArm.Bases.yAxis = v3f{0.0, 1.0, 0.0};
+    Entity->Player.Body.RightArm.Bases.zAxis = v3f{0.0, 0.0, 1.0};
     Entity->Player.Body.RightArm.Bases.Angle = 0;
     Entity->Player.Body.RightArm.Bases.Scale = v3f{1.0f, 1.0f, 1.0f};
+    
+    m3 xAxisRotationMatrix = {
+        1, 0, 0,
+        0, cosf(90.0), sinf(90.0),
+        0, -sinf(90.0), cosf(90.0)
+    };
+    
+    Entity->Player.Body.RightArm.Bases.yAxis = {0, cosf(90.0), sinf(90.0)};
+    Entity->Player.Body.RightArm.Bases.zAxis = {0, -sinf(90.0), cosf(90.0)};
+    Entity->Player.Body.RightArm.Bases.Angle = 90.0;
+#endif
+    
+    float AngleToRotate = PI / 2;
+    Entity->Player.Body.RightArm.Bases.Angle = AngleToRotate;
+    Entity->Player.Body.RightArm.RotationNormal = V3f(1, 0, 0);
+    
+    
+    RotateOrthonormalBases(&Entity->Player.Body.RightArm.Bases, 0);
     
     Entity->Player.Body.LeftArm.ColorFill = Green;
     Entity->Player.Body.LeftArm.Type = Shape_Box;
@@ -120,6 +132,8 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Player.Body.LeftArm.Box.Width = 10;
     Entity->Player.Body.LeftArm.Box.Height = 10;
     Entity->Player.Body.LeftArm.Box.Depth = 30;
+    
+    Entity->Player.ArmHeight = Entity->Player.Body.LeftArm.Origin.z;
     
     Entity->Player.Body.Torso.ColorFill = Green;
     Entity->Player.Body.Torso.Type = Shape_Box;
@@ -183,9 +197,9 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Enemy.Body.RightArm.Box.Height = 10;
     Entity->Enemy.Body.RightArm.Box.Depth = 30;
     
-    Entity->Enemy.Body.RightArm.Bases.xAxis = v3f{0.0f, -1.0f, 0.0f};
-    Entity->Enemy.Body.RightArm.Bases.yAxis = v3f{1.0f, 0.0f, 0.0f};
-    Entity->Enemy.Body.RightArm.Bases.zAxis = v3f{0.0f, 0.0f, 0.0f};
+    Entity->Enemy.Body.RightArm.Bases.xAxis = v3f{1.0f, 0.0f, 0.0f};
+    Entity->Enemy.Body.RightArm.Bases.yAxis = v3f{0.0f, 1.0f, 0.0f};
+    Entity->Enemy.Body.RightArm.Bases.zAxis = v3f{0.0f, 0.0f, 1.0f};
     Entity->Enemy.Body.RightArm.Bases.Angle = 0.0f;
     Entity->Enemy.Body.RightArm.Bases.Scale = v3f{1.0f, 1.0f, 1.0f};
     
@@ -196,6 +210,8 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Enemy.Body.LeftArm.Box.Width = 10;
     Entity->Enemy.Body.LeftArm.Box.Height = 10;
     Entity->Enemy.Body.LeftArm.Box.Depth = 30;
+    
+    Entity->Enemy.ArmHeight = 40.0;
     
     Entity->Enemy.Body.Torso.ColorFill = Red;
     Entity->Enemy.Body.Torso.Type = Shape_Box;

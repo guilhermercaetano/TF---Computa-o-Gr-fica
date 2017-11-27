@@ -84,7 +84,7 @@ typedef struct m3x3
         v3f a3;
     };
     
-} m3x3;
+} m3x3, m3;
 
 typedef struct bases
 {
