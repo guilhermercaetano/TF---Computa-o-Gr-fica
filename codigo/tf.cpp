@@ -65,7 +65,7 @@ OpenGLTRSTransform(v3f Position, float AngleInDegrees, v3f Normal, v3f Scale)
 
 inline void MovePlayerArm(entity_player *Player, v3f DesiredDirection)
 {
-    float Angle = Player->Bases.Angle;
+    float Angle = Player->Transform.Rotation.x;
     v3f xAxis = Player->Bases.xAxis;
     v3f yAxis = Player->Bases.yAxis;
     
@@ -78,13 +78,13 @@ inline void MovePlayerArm(entity_player *Player, v3f DesiredDirection)
     {
         if (AngleToTurnInDegrees > 45.0f)
         {
-            Player->Body.RightArm.Bases.Angle = DegreesToRads(-45.0f);
+            Player->Body.RightArm.Transform.Rotation.z = DegreesToRads(-45.0f);
             RotateOrthonormalBases(&Player->Body.RightArm.Bases, DegreesToRads(-45.0f));
         }
         
         else
         {
-            Player->Body.RightArm.Bases.Angle = -AngleToTurn;
+            Player->Body.RightArm.Transform.Rotation.z = -AngleToTurn;
             RotateOrthonormalBases(&Player->Body.RightArm.Bases, -AngleToTurn);
         }
     }
@@ -93,13 +93,13 @@ inline void MovePlayerArm(entity_player *Player, v3f DesiredDirection)
     {
         if (AngleToTurnInDegrees > 45.0f)
         {
-            Player->Body.RightArm.Bases.Angle = DegreesToRads(45.0f);
+            Player->Body.RightArm.Transform.Rotation.z = DegreesToRads(45.0f);
             RotateOrthonormalBases(&Player->Body.RightArm.Bases, DegreesToRads(45.0f));
         }
         
         else
         {
-            Player->Body.RightArm.Bases.Angle = AngleToTurn;
+            Player->Body.RightArm.Transform.Rotation.z = AngleToTurn;
             RotateOrthonormalBases(&Player->Body.RightArm.Bases, AngleToTurn);
         }
     }
@@ -511,8 +511,8 @@ void UpdateAndDrawEntity(entity *Entity)
             {
                 glPushMatrix();
                 v3f PlayerP = Entity->Player.Position;
-                v3f Scale = Entity->Player.Bases.Scale;
-                float FacingAngle = RadsToDegrees(Entity->Player.Bases.Angle);
+                v3f Scale = Entity->Player.Transform.Scale;
+                float FacingAngle = RadsToDegrees(Entity->Player.Transform.Rotation.z);
                 OpenGLTRSTransform(PlayerP, FacingAngle, V3f(0, 0, 1), Scale);
                 
                 for (int i = 0; 
@@ -521,11 +521,14 @@ void UpdateAndDrawEntity(entity *Entity)
                 {
                     shape Component = Entity->Player.Body.Components[i];
                     v3f Position = Component.Origin;
-                    float AngleInRadians = Entity->Player.Body.Components[i].Bases.Angle;
+                    v3f AngleInRadians = Entity->Player.Body.Components[i].Transform.Rotation;
                     glPushMatrix();
                     glTranslatef(Position.x, Position.y, Position.z);
                     v3f RotNormal = Entity->Player.Body.Components[i].RotationNormal;
-                    glRotatef(RadsToDegrees(AngleInRadians), RotNormal.x, RotNormal.y, RotNormal.z);
+                    
+                    glRotatef(RadsToDegrees(AngleInRadians.x), 1, 0, 0);
+                    glRotatef(RadsToDegrees(AngleInRadians.y), 0, 1, 0);
+                    glRotatef(RadsToDegrees(AngleInRadians.z), 1, 0, 1);
                     
                     if (Component.Texture)
                     {
@@ -615,7 +618,7 @@ void UpdateAndDrawEntity(entity *Entity)
                     Entity->Enemy.CyclesToShoot = Game.EnemyCountToShoot;
                     //ASSERT(Entity->Enemy.Body.RightArm.Bases.Angle == 0);
                     CreateBulletEntity(GlobalBullets, Entity_Enemy, 100, Entity->Enemy.ArmHeight, 
-                                       Entity->Enemy.ShotVelocity, Entity->Enemy.Bases, Entity->Enemy.Body.RightArm,
+                                       Entity->Enemy.ShotVelocity, Entity->Enemy.Bases, Entity->Enemy.Transform.Rotation, Entity->Enemy.Body.RightArm,
                                        Entity->Enemy.Position);
                     
                     if ((GlobalBullets-SaveGlobalBullets) < 99)
@@ -669,8 +672,8 @@ void UpdateAndDrawEntity(entity *Entity)
             {
                 glPushMatrix();
                 v3f EnemyP = Entity->Enemy.Position;
-                v3f Scale = Entity->Enemy.Bases.Scale;
-                float FacingAngle = RadsToDegrees(Entity->Enemy.Bases.Angle);
+                v3f Scale = Entity->Enemy.Transform.Scale;
+                float FacingAngle = RadsToDegrees(Entity->Enemy.Transform.Rotation.z);
                 OpenGLTRSTransform(EnemyP, FacingAngle, V3f(0, 0, 1), Scale);
                 
                 for (int i = 0; 
@@ -678,11 +681,15 @@ void UpdateAndDrawEntity(entity *Entity)
                      i++)
                 {
                     shape Component = Entity->Enemy.Body.Components[i];
+                    v3f RotNormal = Entity->Enemy.Body.Components[i].RotationNormal;
                     v3f Position = Component.Origin;
-                    float AngleInRadians = Component.Bases.Angle;
+                    v3f AngleInRadians = Component.Transform.Rotation;
+                    
                     glPushMatrix();
                     glTranslatef(Position.x, Position.y, Position.z);
-                    glRotatef(RadsToDegrees(AngleInRadians), 0, 0, 1);
+                    glRotatef(RadsToDegrees(AngleInRadians.x), 1, 0, 0);
+                    glRotatef(RadsToDegrees(AngleInRadians.y), 0, 1, 0);
+                    glRotatef(RadsToDegrees(AngleInRadians.z), 0, 0, 1);
                     DrawShape(&Component, Component.OffsetFromOrigin, 0);
                     glPopMatrix();
                 }
@@ -1418,8 +1425,8 @@ inline void ProcessInput(input Input, entity_player *Player)
 {
     if (Input.Keyboard['a'] || Input.Keyboard['A'])
     {
-        Player->Bases.Angle += DegreesToRads(Game.Player->Player.SpinMagnitude);
-        RotateOrthonormalBases(&Player->Bases, Player->Bases.Angle);
+        Player->Transform.Rotation.z += DegreesToRads(Game.Player->Player.SpinMagnitude);
+        RotateOrthonormalBases(&Player->Bases, Player->Transform.Rotation.z);
     }
     
     if (Input.Keyboard['s'] || Input.Keyboard['S'])
@@ -1438,8 +1445,8 @@ inline void ProcessInput(input Input, entity_player *Player)
     
     if (Input.Keyboard['d'] || Input.Keyboard['D'])
     {
-        Player->Bases.Angle -= DegreesToRads(Game.Player->Player.SpinMagnitude);
-        RotateOrthonormalBases(&Player->Bases, Player->Bases.Angle);
+        Player->Transform.Rotation.z -= DegreesToRads(Game.Player->Player.SpinMagnitude);
+        RotateOrthonormalBases(&Player->Bases, Player->Transform.Rotation.z);
     }
     
     if (Input.Keyboard['p'] || Input.Keyboard['P'])
@@ -1458,7 +1465,7 @@ inline void ProcessInput(input Input, entity_player *Player)
     if (ShotFired && !Player->Jumping && !Player->Dynamics.PlatformAllow)
     {
         CreateBulletEntity(GlobalBullets, Entity_Player, 100, Player->ArmHeight, Player->ShotVelocity,
-                           Player->Bases, Player->Body.RightArm, Player->Position);
+                           Player->Bases, Player->Transform.Rotation, Player->Body.RightArm, Player->Position);
         
         if ((GlobalBullets-SaveGlobalBullets) < 99)
         {
@@ -1487,7 +1494,7 @@ void CameraUpdate()
     float RelativeDistYTraveled = DistTraveledLastFrame.y / WindowHeight;
     float NewCameraPhi = CameraPerspectivePhi + PI * 0.6 * RelativeDistYTraveled;
     float NewCameraTheta = CameraPerspectiveTheta + PI * 0.6 * RelativeDistXTraveled;
-    float PlayerAngle = Game.Player->Player.Bases.Angle;
+    float PlayerAngle = Game.Player->Player.Transform.Rotation.z;
     
     if (CameraPerspMoved)
     {

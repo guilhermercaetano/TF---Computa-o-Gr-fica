@@ -169,13 +169,11 @@ float RadsToDegrees(float AngleInRads)
     return Result;
 }
 
+// NOTA: Isso possivelmente vai sumir em breve.
 bases * RotateOrthonormalBases(bases *Bases, float AngleToRotate)
 {
     Bases->xAxis = V3f(cosf(AngleToRotate), sinf(AngleToRotate), 0.0f);
     Bases->yAxis = V3f(-sinf(AngleToRotate), cosf(AngleToRotate), 0.0f);
-    Bases->Angle = AngleToRotate;
-    
-    //TODO: Rotação incremental das bases Bases->Angle += AngleToRotate;
     
     return Bases;
 }

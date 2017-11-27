@@ -91,6 +91,7 @@ struct shape
     v3f OffsetFromOrigin;
     v3f RotationNormal;
     bases Bases;
+    transform Transform;
     texture *Texture;
     
     union

@@ -12,11 +12,11 @@ FillEntityHeader(entity_header *Header, int Id, uint State, entity_type Type,
 
 inline entity_bullet *
 CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float Height, 
-                   float ShotVelocity, bases EntityBases, shape BodyPart, v3f Origin)
+                   float ShotVelocity, bases EntityBases, v3f Rotation, shape BodyPart, v3f Origin)
 {
     Entity->Bullet.VelocityMagnitude = ShotVelocity;
     
-    RotateOrthonormalBases(&Entity->Bullet.Bases, EntityBases.Angle + BodyPart.Bases.Angle);
+    //RotateOrthonormalBases(&Entity->Bullet.Bases, EntityBases.Angle + BodyPart.Bases.Angle);
     v3f ArmOrigin = CoordinateChange(EntityBases.BaseMatrix, BodyPart.Origin);
     v3f ArmOffset01 = CoordinateChange(EntityBases.BaseMatrix, 
                                        V3f(0, BodyPart.Rectangle.Height, 0));
@@ -29,6 +29,8 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
                      Entity_Bullet, Height, Entity->Bullet.Position);
     
     Entity->Bullet.Header = &Entity->Header;
+    float AbsBulletAngle = Rotation.z + BodyPart.Transform.Rotation.z;
+    RotateOrthonormalBases(&Entity->Bullet.Bases, AbsBulletAngle);
     
     Entity->Bullet.Shape.ColorFill = Black;
     Entity->Bullet.Shape.Type = Shape_Circle;
@@ -74,8 +76,8 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Player.Bases.xAxis = v3f{1.0f, 0.0f, 0.0f};
     Entity->Player.Bases.yAxis = v3f{0.0f, 1.0f, 0.0f};
     Entity->Player.Bases.zAxis = v3f{0.0f, 0.0f, 1.0f};
-    Entity->Player.Bases.Angle = 0.0f;
-    Entity->Player.Bases.Scale = v3f{1.0f, 1.0f, 1.0f};
+    
+    Entity->Player.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
     
     Entity->Player.Body.RightLeg.ColorFill = Green;
     Entity->Player.Body.RightLeg.Type = Shape_Box;
@@ -94,7 +96,7 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Player.Body.RightArm.ColorFill = Green;
     Entity->Player.Body.RightArm.Type = Shape_Box;
     Entity->Player.Body.RightArm.Origin = v3f{1.3f * Radius, 0, 40};
-    Entity->Player.Body.RightArm.OffsetFromOrigin = V3f(0, 10, 0);
+    Entity->Player.Body.RightArm.OffsetFromOrigin = V3f(0, 0, 15);
     Entity->Player.Body.RightArm.Box.Width = 10;
     Entity->Player.Body.RightArm.Box.Height = 10;
     Entity->Player.Body.RightArm.Box.Depth = 30;
@@ -105,7 +107,6 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Player.Body.RightArm.Bases.yAxis = v3f{0.0, 1.0, 0.0};
     Entity->Player.Body.RightArm.Bases.zAxis = v3f{0.0, 0.0, 1.0};
     Entity->Player.Body.RightArm.Bases.Angle = 0;
-    Entity->Player.Body.RightArm.Bases.Scale = v3f{1.0f, 1.0f, 1.0f};
     
     m3 xAxisRotationMatrix = {
         1, 0, 0,
@@ -113,17 +114,15 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
         0, -sinf(90.0), cosf(90.0)
     };
     
-    Entity->Player.Body.RightArm.Bases.yAxis = {0, cosf(90.0), sinf(90.0)};
-    Entity->Player.Body.RightArm.Bases.zAxis = {0, -sinf(90.0), cosf(90.0)};
-    Entity->Player.Body.RightArm.Bases.Angle = 90.0;
+    Entity->Player.Body.RightArm.Bases.yAxis = {0, cosf(-90.0), sinf(-90.0)};
+    Entity->Player.Body.RightArm.Bases.zAxis = {0, -sinf(-90.0), cosf(-90.0)};
+    Entity->Player.Body.RightArm.Bases.Angle = -90.0;
 #endif
     
-    float AngleToRotate = PI / 2;
-    Entity->Player.Body.RightArm.Bases.Angle = AngleToRotate;
+    float AngleToRotate = -PI / 2;
+    Entity->Player.Body.RightArm.Transform.Rotation.x = AngleToRotate;
     Entity->Player.Body.RightArm.RotationNormal = V3f(1, 0, 0);
-    
-    
-    RotateOrthonormalBases(&Entity->Player.Body.RightArm.Bases, 0);
+    Entity->Player.Body.RightArm.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
     
     Entity->Player.Body.LeftArm.ColorFill = Green;
     Entity->Player.Body.LeftArm.Type = Shape_Box;
@@ -165,12 +164,12 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Enemy.ShotFrequency = Game.EnemyShotFrequency;
     Entity->Enemy.CyclesToShoot = Game.EnemyCountToShoot;
     
-    Entity->Enemy.Bases.Scale = v3f{1.0, 1.0, 1.0};
+    Entity->Enemy.Transform.Scale = v3f{1.0, 1.0, 1.0};
     
     srand((uint)time(0)+Id*101);
     float PiFraction = (rand() / 65536.0) * PI;
     RotateOrthonormalBases(&Entity->Enemy.Bases, -PiFraction);
-    Entity->Enemy.Bases.Angle = -PiFraction;
+    Entity->Enemy.Transform.Rotation.z = -PiFraction;
     
     Entity->Enemy.CyclesToChangeWalkingDirection = 180;
     Entity->Enemy.CountToChangeWalkingDirection = 180;
@@ -192,7 +191,7 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Enemy.Body.RightArm.ColorFill = Red;
     Entity->Enemy.Body.RightArm.Type = Shape_Box;
     Entity->Enemy.Body.RightArm.Origin = v3f{1.3f * Radius, 0, 40};
-    Entity->Enemy.Body.RightArm.OffsetFromOrigin = V3f(0, 30/2, 0);
+    Entity->Enemy.Body.RightArm.OffsetFromOrigin = V3f(0, 0, 15);
     Entity->Enemy.Body.RightArm.Box.Width = 10;
     Entity->Enemy.Body.RightArm.Box.Height = 10;
     Entity->Enemy.Body.RightArm.Box.Depth = 30;
@@ -200,8 +199,12 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Enemy.Body.RightArm.Bases.xAxis = v3f{1.0f, 0.0f, 0.0f};
     Entity->Enemy.Body.RightArm.Bases.yAxis = v3f{0.0f, 1.0f, 0.0f};
     Entity->Enemy.Body.RightArm.Bases.zAxis = v3f{0.0f, 0.0f, 1.0f};
-    Entity->Enemy.Body.RightArm.Bases.Angle = 0.0f;
-    Entity->Enemy.Body.RightArm.Bases.Scale = v3f{1.0f, 1.0f, 1.0f};
+    
+    Entity->Enemy.Body.RightArm.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    
+    float AngleToRotate = -PI / 2;
+    Entity->Enemy.Body.RightArm.Transform.Rotation.x = AngleToRotate;
+    Entity->Enemy.Body.RightArm.RotationNormal = V3f(1, 0, 0);
     
     Entity->Enemy.Body.LeftArm.ColorFill = Red;
     Entity->Enemy.Body.LeftArm.Type = Shape_Box;
@@ -245,8 +248,7 @@ CreateBackgroundEntity(entity *Entity, int Id, float Height, float Radius, v3f O
     {
         v3f{1.0f, 0.0f, 0.0f},
         v3f{0.0f, 1.0f, 0.0f}, 
-        v3f{0.0f, 1.0f, 1.0f},
-        0.0f
+        v3f{0.0f, 1.0f, 1.0f}
     };
     Entity->Background.Shape.Type = Shape_Circle;
     Entity->Background.Shape.Circle.Radius = Radius;

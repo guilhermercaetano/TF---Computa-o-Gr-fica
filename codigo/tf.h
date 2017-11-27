@@ -2,6 +2,14 @@
 #define _MAIN_
 
 #include "svg_colors.h"
+
+typedef struct transform
+{
+    v3f Translation;
+    v3f Rotation;
+    v3f Scale;
+} transform;
+
 #include "shape_definitions.h"
 
 #define STRCMP(STR, LSTR) strncmp(STR, LSTR, strlen(LSTR))
@@ -142,9 +150,11 @@ struct entity_enemy
     
     int CyclesToChangeFootDirection;
     bool Jumping;
-    body Body;
     game_dynamics Dynamics;
+    
+    body Body;
     bases Bases;
+    transform Transform;
     
     v3f Acceleration;
     float ShotVelocity;
@@ -166,6 +176,7 @@ struct entity_player
     body Body;
     game_dynamics Dynamics;
     bases Bases;
+    transform Transform;
     
     v3f Acceleration;
     float ShotVelocity;

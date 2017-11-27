@@ -99,10 +99,6 @@ typedef struct bases
         m3x3 BaseMatrix;
     };
     
-    float Angle;
-    
-    v3f Scale;
-    v3f Rotation;
 } bases;
 
 v3f operator+=(v3f &, v3f);
