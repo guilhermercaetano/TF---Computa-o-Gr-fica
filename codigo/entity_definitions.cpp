@@ -151,7 +151,7 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Enemy.ShotFrequency = Game.EnemyShotFrequency;
     Entity->Enemy.CyclesToShoot = Game.EnemyCountToShoot;
     
-    Entity->Enemy.Bases.Scale = v3f{0.5f, 0.5f, 0.5f};
+    Entity->Enemy.Bases.Scale = v3f{1.0, 1.0, 1.0};
     
     srand((uint)time(0)+Id*101);
     float PiFraction = (rand() / 65536.0) * PI;
@@ -163,21 +163,21 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Enemy.Body.RightLeg.ColorFill = Red;
     Entity->Enemy.Body.RightLeg.Type = Shape_Box;
-    Entity->Enemy.Body.RightLeg.Origin = v3f{0.5f * Radius, 20, 0.8f};
+    Entity->Enemy.Body.RightLeg.Origin = v3f{0.5f * Radius, 5, 20};
     Entity->Enemy.Body.RightLeg.Box.Width = 12;
     Entity->Enemy.Body.RightLeg.Box.Height = 10;
     Entity->Enemy.Body.RightLeg.Box.Depth = 40;
     
     Entity->Enemy.Body.LeftLeg.ColorFill = Red;
     Entity->Enemy.Body.LeftLeg.Type = Shape_Box;
-    Entity->Enemy.Body.LeftLeg.Origin = v3f{-0.5f * Radius, -20, 0.8f};
+    Entity->Enemy.Body.LeftLeg.Origin = v3f{-0.5f * Radius, -5, 20};
     Entity->Enemy.Body.LeftLeg.Box.Width = 12;
     Entity->Enemy.Body.LeftLeg.Box.Height = 10;
     Entity->Enemy.Body.LeftLeg.Box.Depth = 40;
     
     Entity->Enemy.Body.RightArm.ColorFill = Red;
     Entity->Enemy.Body.RightArm.Type = Shape_Box;
-    Entity->Enemy.Body.RightArm.Origin = v3f{1.3f * Radius, 0, Radius/2 + 16};
+    Entity->Enemy.Body.RightArm.Origin = v3f{1.3f * Radius, 0, 40};
     Entity->Enemy.Body.RightArm.OffsetFromOrigin = V3f(0, 30/2, 0);
     Entity->Enemy.Body.RightArm.Box.Width = 10;
     Entity->Enemy.Body.RightArm.Box.Height = 10;
@@ -191,7 +191,7 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Enemy.Body.LeftArm.ColorFill = Red;
     Entity->Enemy.Body.LeftArm.Type = Shape_Box;
-    Entity->Enemy.Body.LeftArm.Origin = v3f{-1.3f * Radius, 0, Radius/2 + 16};
+    Entity->Enemy.Body.LeftArm.Origin = v3f{-1.3f * Radius, 0, 40};
     Entity->Enemy.Body.LeftArm.OffsetFromOrigin = V3f(0, 30/2, 0);
     Entity->Enemy.Body.LeftArm.Box.Width = 10;
     Entity->Enemy.Body.LeftArm.Box.Height = 10;
@@ -199,7 +199,7 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Enemy.Body.Torso.ColorFill = Red;
     Entity->Enemy.Body.Torso.Type = Shape_Box;
-    Entity->Enemy.Body.Torso.Origin = v3f{0.0f, 0.0f, 20};
+    Entity->Enemy.Body.Torso.Origin = v3f{0.0f, 0.0f, 40};
     Entity->Enemy.Body.Torso.Box.Width = 1.6f * Radius;
     Entity->Enemy.Body.Torso.Box.Height = 0.6f * Radius;
     Entity->Enemy.Body.Torso.Box.Depth = 1.5 * Radius;
@@ -207,7 +207,7 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Enemy.Body.Head.ColorFill = Red;
     Entity->Enemy.Body.Head.Type = Shape_Sphere;
     Entity->Enemy.Body.Head.Sphere.Radius = Radius;
-    Entity->Enemy.Body.Head.Origin = v3f{0.0f, 0.0f, Radius + 40};
+    Entity->Enemy.Body.Head.Origin = v3f{0.0f, 0.0f, 80};
     
     return &Entity->Enemy;
 }

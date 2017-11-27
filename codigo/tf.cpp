@@ -665,7 +665,7 @@ void UpdateAndDrawEntity(entity *Entity)
             {
                 glPushMatrix();
                 v3f EnemyP = Entity->Enemy.Position;
-                v3f Scale = Entity->Enemy.Bases.Scale + EnemyP.z;
+                v3f Scale = Entity->Enemy.Bases.Scale;
                 float FacingAngle = RadsToDegrees(Entity->Enemy.Bases.Angle);
                 OpenGLTRSTransform(EnemyP, FacingAngle, V3f(0, 0, 1), Scale);
                 
