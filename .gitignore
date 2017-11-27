@@ -1,0 +1,6 @@
+*.o
+misc/
+trabalhocg
+zip.sh
+*.zip
+*.pdf
