@@ -137,7 +137,7 @@ entity_list * Collision(entity *Entity, shape CollisionShape)
                     v3f d = Entity->Header.Origin - TargetEntity->Header.Origin;
                     d.z = 0;
                     float dCenter = VectorSize(d);
-                    float dRadius = Shape.Circle.Radius + CollisionShape.Circle.Radius;
+                    float dRadius = Shape.Sphere.Radius + CollisionShape.Circle.Radius;
                     if (dCenter <= dRadius)
                     {
                         EntityList->Content = TargetEntity;
@@ -155,7 +155,7 @@ entity_list * Collision(entity *Entity, shape CollisionShape)
                     v3f d = Entity->Header.Origin - TargetEntity->Static.Origin;
                     d.z = 0;
                     float dCenter = VectorSize(d);
-                    float dRadius = Shape.Circle.Radius + CollisionShape.Circle.Radius;
+                    float dRadius = 1.05 * Shape.Circle.Radius + CollisionShape.Circle.Radius;
                     if (dCenter <= dRadius)
                     {
                         EntityList->Content = TargetEntity;
@@ -172,7 +172,7 @@ entity_list * Collision(entity *Entity, shape CollisionShape)
                     v3f d = Entity->Header.Origin - TargetEntity->Enemy.Position;
                     d.z = 0;
                     float dCenter = VectorSize(d);
-                    float dRadius = Shape.Circle.Radius + CollisionShape.Circle.Radius;
+                    float dRadius = Shape.Sphere.Radius + CollisionShape.Circle.Radius;
                     if (dCenter <= dRadius)
                     {
                         EntityList->Content = TargetEntity;
@@ -434,7 +434,7 @@ void EnemyCollisionZ(arena Arena, entity_enemy *Enemy)
         {
             v3f d = Enemy->Header->Origin - JumpingPlatform->Static.Origin;
             
-            float MinkowskiRadius = JumpingPlatform->Static.Shape.Circle.Radius + Enemy->Body.Head.Circle.Radius;
+            float MinkowskiRadius = JumpingPlatform->Static.Shape.Circle.Radius + Enemy->Body.Head.Sphere.Radius;
             if (VectorSize(d) <= MinkowskiRadius)
             {
                 PlatformAllowFlag = true;
@@ -1175,7 +1175,7 @@ void PlayerJump(entity_player *Player)
     printf("Jump velocity: %.4f, Displ. z: %.4f, Radius: %.4f\n", 
            Player->Velocity.z, 
            Player->Position.z, 
-           Player->Body.Head.Circle.Radius);
+           Player->Body.Head.Sphere.Radius);
     
     printf("Torso z: %.4f\n", 
            Player->Body.Torso.Origin.z);
@@ -1248,8 +1248,8 @@ void MovePlayer(entity_player *Player)
                         v3f d = Player->Position + NewdeltaPos - Entity->Enemy.Position;
                         d.z = 0;
                         float dCenter = VectorSize(d);
-                        circle Circle = Player->Body.Head.Circle; 
-                        float dRadius = Circle.Radius + Entity->Enemy.Body.Head.Circle.Radius;
+                        sphere Sphere = Player->Body.Head.Sphere; 
+                        float dRadius = Sphere.Radius + Entity->Enemy.Body.Head.Sphere.Radius;
                         
                         if (dCenter <= dRadius)
                         {
@@ -1271,8 +1271,8 @@ void MovePlayer(entity_player *Player)
                         v3f d = Player->Position + NewdeltaPos - Entity->Static.Origin;
                         d.z = 0;
                         float dCenter = VectorSize(d);
-                        circle Circle = Player->Body.Head.Circle; 
-                        float dRadius = Circle.Radius + Entity->Static.Shape.Circle.Radius;
+                        sphere Sphere = Player->Body.Head.Sphere; 
+                        float dRadius = Sphere.Radius + Entity->Static.Shape.Circle.Radius;
                         
                         if (dCenter <= dRadius)
                         {
@@ -1292,8 +1292,8 @@ void MovePlayer(entity_player *Player)
                         v3f d = Player->Position + NewdeltaPos - Entity->Static.Origin;
                         d.z = 0;
                         float dCenter = VectorSize(d);
-                        circle Circle = Player->Body.Head.Circle; 
-                        float dRadius = Circle.Radius + Entity->Static.Shape.Circle.Radius;
+                        sphere Sphere = Player->Body.Head.Sphere; 
+                        float dRadius = Sphere.Radius + Entity->Static.Shape.Circle.Radius;
                         
                         if (dCenter <= dRadius)
                         {
@@ -1311,7 +1311,7 @@ void MovePlayer(entity_player *Player)
                 {
                     v3f d = Entity->Background.Origin - NewRelPos - Player->Position;
                     d.z = 0;
-                    float dCenter = VectorSize(d) + Player->Body.Head.Circle.Radius;
+                    float dCenter = VectorSize(d) + Player->Body.Head.Sphere.Radius;
                     
                     if (dCenter >= Entity->Background.Shape.Circle.Radius)
                     {
@@ -1379,7 +1379,7 @@ void PlayerCollisionZ(arena Arena, entity_player *Player)
         {
             v3f d = Player->Position - JumpingPlatform->Static.Origin;
             
-            float MinkowskiRadius = JumpingPlatform->Static.Shape.Circle.Radius + Player->Body.Head.Circle.Radius;
+            float MinkowskiRadius = JumpingPlatform->Static.Shape.Circle.Radius + Player->Body.Head.Sphere.Radius;
             if (VectorSize(d) <= MinkowskiRadius)
             {
                 PlatformAllowFlag = true;

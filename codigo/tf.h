@@ -268,7 +268,7 @@ typedef struct game
     float ObstaclesHeight;
 } game;
 
-float JumpHeight = 20.0f;
+float JumpHeight = 40.0f;
 
 uint WindowWidth = 600;
 uint WindowHeight = 600;

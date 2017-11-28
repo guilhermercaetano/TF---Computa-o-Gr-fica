@@ -19,7 +19,7 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
     //RotateOrthonormalBases(&Entity->Bullet.Bases, EntityBases.Angle + BodyPart.Bases.Angle);
     v3f ArmOrigin = CoordinateChange(EntityBases.BaseMatrix, BodyPart.Origin);
     v3f ArmOffset01 = CoordinateChange(EntityBases.BaseMatrix, 
-                                       V3f(0, BodyPart.Rectangle.Height, 0));
+                                       V3f(0, BodyPart.Box.Depth, 0));
     v3f ArmOffset = CoordinateChange(BodyPart.Bases.BaseMatrix, ArmOffset01);
     
     Entity->Bullet.Position = Origin + ArmOrigin + ArmOffset;
@@ -68,6 +68,7 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Player.Header = &Entity->Header;
     Entity->Player.Position = Center;
+    Entity->Player.Transform.Translation = Center;
     
     Entity->Player.ShotVelocity = Game.ShotVelocity;
     Entity->Player.VelocityMagnitude = Game.PlayerVelocity;
@@ -164,6 +165,10 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Enemy.ShotFrequency = Game.EnemyShotFrequency;
     Entity->Enemy.CyclesToShoot = Game.EnemyCountToShoot;
     
+    Entity->Enemy.Bases = {};
+    Entity->Enemy.Bases.xAxis = {1.0, 0.0, 0.0};
+    Entity->Enemy.Bases.yAxis = {0.0, 1.0, 0.0};
+    Entity->Enemy.Bases.zAxis = {0.0, 0.0, 1.0};
     Entity->Enemy.Transform.Scale = v3f{1.0, 1.0, 1.0};
     
     srand((uint)time(0)+Id*101);
@@ -176,14 +181,14 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Enemy.Body.RightLeg.ColorFill = Red;
     Entity->Enemy.Body.RightLeg.Type = Shape_Box;
-    Entity->Enemy.Body.RightLeg.Origin = v3f{0.5f * Radius, 5, 20};
+    Entity->Enemy.Body.RightLeg.Origin = v3f{0.5f * Radius, 5, 20.5};
     Entity->Enemy.Body.RightLeg.Box.Width = 12;
     Entity->Enemy.Body.RightLeg.Box.Height = 10;
     Entity->Enemy.Body.RightLeg.Box.Depth = 40;
     
     Entity->Enemy.Body.LeftLeg.ColorFill = Red;
     Entity->Enemy.Body.LeftLeg.Type = Shape_Box;
-    Entity->Enemy.Body.LeftLeg.Origin = v3f{-0.5f * Radius, -5, 20};
+    Entity->Enemy.Body.LeftLeg.Origin = v3f{-0.5f * Radius, -5, 20.5};
     Entity->Enemy.Body.LeftLeg.Box.Width = 12;
     Entity->Enemy.Body.LeftLeg.Box.Height = 10;
     Entity->Enemy.Body.LeftLeg.Box.Depth = 40;
