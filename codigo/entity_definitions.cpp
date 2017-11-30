@@ -157,6 +157,7 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Enemy.Header = &Entity->Header;
     Entity->Enemy.Position = Center;
+    Entity->Enemy.Transform.Translation = Center;
     
     Entity->Enemy.ShotVelocity = Game.ShotVelocity;
     Entity->Enemy.VelocityMagnitude = Game.PlayerVelocity;

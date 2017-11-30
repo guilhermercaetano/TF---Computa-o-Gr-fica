@@ -41,20 +41,6 @@ uint LoadTextureRAW(const char * Filename)
     return Texture;
 }
 
-uint LoadNormalMap(const char * Filename)
-{
-    Image* image = LoadBMP(Filename);
-    
-    for (int Height = 0; Height < image->height; Height++)
-    {
-        for (int Width = 0; Width < image->width; Width++)
-        {
-            
-        }
-    }
-}
-
-
 inline void 
 OpenGLTRSTransform(v3f Position, float AngleInDegrees, v3f Normal, v3f Scale)
 {
@@ -253,6 +239,7 @@ void MoveEntity(entity *Entity, game_dynamics *Dynamics, v3f Velocity, shape Sha
                             NewdeltaP += 0.05f * Velocity * Game.Timing.deltaTime + Normal;
                             Dynamics->Collision = true;
                             
+#if 1
                             if (!Entity->Enemy.Jumping && Entity->Enemy.Velocity.z == 0.0f) 
                             {
                                 Entity->Enemy.Dynamics.Ascending = true;
@@ -260,8 +247,11 @@ void MoveEntity(entity *Entity, game_dynamics *Dynamics, v3f Velocity, shape Sha
                                 
                                 // A velocidade é determinada usando a equação da conservação de energia
                                 // para corpos em queda live
-                                Entity->Enemy.Velocity.z = sqrt(2 * GRAVITY_ACCELERATION * JumpHeight);
+                                float GH = 
+                                    GRAVITY_ACCELERATION * GravityAccelerationScale * JumpHeight;
+                                Entity->Enemy.Velocity.z = sqrt(2 * GH);
                             }
+#endif
                         }
                     } break;
                     
@@ -393,14 +383,16 @@ void EnemyJump(entity_enemy *Enemy)
     
     if (Enemy->Dynamics.Ascending)
     {
-        Enemy->Velocity.z = sqrt(2 * GRAVITY_ACCELERATION * HeightToJump);
+        float GH = GravityAccelerationScale * GRAVITY_ACCELERATION * HeightToJump;
+        Enemy->Velocity.z = sqrt(2 * GH);
     }
     else
     {
-        Enemy->Velocity.z = -1 * sqrt(2 * GRAVITY_ACCELERATION * HeightToJump);
+        float GH = GravityAccelerationScale * GRAVITY_ACCELERATION * HeightToJump;
+        Enemy->Velocity.z = -1 * sqrt(2 * GH);
     }
     
-    if (Enemy->Velocity.z < 0.2f) 
+    if (Enemy->Velocity.z < 5.0) 
     {
         Enemy->Dynamics.Ascending = false;
     }
@@ -408,12 +400,6 @@ void EnemyJump(entity_enemy *Enemy)
     if (Enemy->Position.z <= Game.Arena.Background->Header->Height) 
     {
         Enemy->Velocity.z = 0.0f;
-        
-        for (int i = 0; i < ArrayCount(Enemy->Body.Components); i++)
-        {
-            Enemy->Body.Components[i].Origin.z = Game.Arena.Background->Header->Height;
-        }
-        
         Enemy->Header->Origin.z = Game.Arena.Background->Header->Height;
         Enemy->Jumping = false;
         return;
@@ -1178,7 +1164,7 @@ void PlayerJump(entity_player *Player)
            Player->Body.Head.Sphere.Radius);
     
     printf("Torso z: %.4f\n", 
-           Player->Body.Torso.Origin.z);
+           Player->Header->Origin.z + Player->Body.Torso.Origin.z);
 #endif
     
     Player->Position.z = Player->Position.z + Player->Velocity.z * Game.Timing.deltaTime;
@@ -1189,14 +1175,17 @@ void PlayerJump(entity_player *Player)
     
     if (Player->Dynamics.Ascending)
     {
-        Player->Velocity.z = sqrt(2 * GRAVITY_ACCELERATION * HeightToJump);
+        float GH = GravityAccelerationScale * GRAVITY_ACCELERATION * HeightToJump;
+        Player->Velocity.z = sqrt(2 * GH);
     }
     else
     {
-        Player->Velocity.z = -1 * sqrt(2 * GRAVITY_ACCELERATION * HeightToJump);
+        float GH = GravityAccelerationScale * GRAVITY_ACCELERATION * HeightToJump;
+        Player->Velocity.z = -1 * sqrt(2 * GH);
     }
     
-    if (Player->Velocity.z < 0.2f) 
+    float OffsetJumpHeight = 5.0;
+    if (Player->Velocity.z < OffsetJumpHeight) 
     {
         Player->Dynamics.Ascending = false;
     }
@@ -1458,7 +1447,9 @@ inline void ProcessInput(input Input, entity_player *Player)
             
             // A velocidade é determinada usando a equação da conservação de energia
             // para corpos em queda live
-            Player->Velocity.z = sqrt(2 * GRAVITY_ACCELERATION * JumpHeight);
+            float GH = 
+                GravityAccelerationScale * GRAVITY_ACCELERATION * JumpHeight;
+            Player->Velocity.z = sqrt(2 * GH);
         }
     }
     
@@ -1550,8 +1541,11 @@ void CameraUpdate()
     v3f PlayerP = Game.Player->Header.Origin;
     
 #if 0 // Camera 1
-    gluLookAt(PlayerP.x, PlayerP.y, PlayerHeight, 
-              PlayerP.x, PlayerP.y, PlayerP.z, 
+    v3f PlayerLookingDir = V3f(10 * PlayerP.x * PlayerBases.yAxis.x, 
+                               10 * PlayerP.y * PlayerBases.yAxis.y, 
+                               10 * PlayerP.z * PlayerBases.yAxis.z);
+    gluLookAt(PlayerP.x, PlayerP.y, 100.0 + PlayerP.z, 
+              PlayerLookingDir.x, PlayerLookingDir.y, PlayerLookingDir.z, 
               0, 0, 1);
 #else 
     // NOTA: Câmera em terceira pessoa olhando para o jogador

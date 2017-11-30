@@ -17,6 +17,7 @@ typedef struct transform
 
 #define MAX_ENTITIES 100
 #define GRAVITY_ACCELERATION 9.8
+#define GravityAccelerationScale 12.0
 #define AccelMagnitude 500.0
 
 #define ASSERT(COND) if (!(COND)) {*(int *)0 = 0;}
