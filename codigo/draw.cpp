@@ -1,5 +1,14 @@
 
-void BindTexture(uint TextureId, material Material)
+// TODO: Mudar tamanho da textura
+inline void DrawImmVertex(vertex Vertex, v3f Origin)
+{
+    glNormal3f(Vertex.Normal.x, Vertex.Normal.y, Vertex.Normal.z);
+    glTexCoord2f(Vertex.UVCoordinate.x, Vertex.UVCoordinate.y);
+    Vertex.Coordinate += Origin;
+    glVertex3f(Vertex.Coordinate.x, Vertex.Coordinate.y, Vertex.Coordinate.z);
+}
+
+void SetMaterialAndTexture(uint TextureId, material Material)
 {
     glColor3f(1,1,1);
     
@@ -44,6 +53,86 @@ void OpenGLDrawSphere(sphere *Sphere, v3f Center)
     glEnd();
 }
 
+void OpenGLDrawCylinder(cylinder *Cylinder, v3f Origin)
+{
+    // NOTA: Desenhando base do cilindro
+    glBegin(GL_TRIANGLE_FAN);
+    {
+        glNormal3f(0,0,1);
+        glTexCoord2f(0, 0);
+        glVertex3f(Origin.x, Origin.y, Origin.z);
+        
+        float TexScale = 1.0;
+        
+        for (int i = 0; i < MaxCircleVertices; i++)
+        {
+            v2f TexCoordScaled = TexScale * Cylinder->BaseVertices[i].UVCoordinate;
+            DrawImmVertex(Cylinder->BaseVertices[i], Origin);
+        }
+        
+        v2f TexCoordScaled = TexScale * Cylinder->BaseVertices[0].UVCoordinate;
+        DrawImmVertex(Cylinder->BaseVertices[0], Origin);
+    }
+    glEnd();
+    
+    // NOTA: Desenhando superficie lateral do cilindro
+    glBegin(GL_TRIANGLES);
+    {
+        DrawImmVertex(Cylinder->Vertices[0], Origin);
+        DrawImmVertex(Cylinder->Vertices[1], Origin);
+        DrawImmVertex(Cylinder->Vertices[2], Origin);
+    }
+    glEnd();
+    
+    glBegin(GL_TRIANGLE_STRIP);
+    {
+        DrawImmVertex(Cylinder->Vertices[2], Origin);
+        DrawImmVertex(Cylinder->Vertices[1], Origin);
+        
+        for (int i = 3; i < 2 * MaxCircleVertices; i++)
+        {
+            DrawImmVertex(Cylinder->Vertices[i], Origin);
+        }
+        
+#if 0
+        DrawImmVertex(Cylinder->Vertices[0]);
+        DrawImmVertex(Cylinder->Vertices[2]);
+#else
+        v3f Vertex = Cylinder->Vertices[0].Coordinate + Origin;
+        glNormal3fv(Cylinder->Vertices[0].Normal.fv);
+        glTexCoord2f(2 * PI, 0.0);
+        glVertex3fv(Vertex.fv);
+        
+        Vertex = Cylinder->Vertices[2].Coordinate + Origin;
+        glNormal3fv(Cylinder->Vertices[2].Normal.fv);
+        glTexCoord2f(2 * PI, 1.0);
+        glVertex3fv(Vertex.fv);
+#endif
+    }
+    glEnd();
+    
+    
+    // NOTA: Desenhando topo do cilindro
+    glBegin(GL_TRIANGLE_FAN);
+    {
+        glNormal3f(0,0,-1);
+        glTexCoord2f(0, 0);
+        glVertex3f(Origin.x, Origin.y, Cylinder->Height + Origin.z);
+        
+        float TexScale = 1.0;
+        
+        for (int i = 0; i < MaxCircleVertices; i++)
+        {
+            v2f TexCoordScaled = TexScale * Cylinder->TopVertices[i].UVCoordinate;
+            DrawImmVertex(Cylinder->TopVertices[i], Origin);
+        }
+        
+        v2f TexCoordScaled = TexScale * Cylinder->TopVertices[0].UVCoordinate;
+        DrawImmVertex(Cylinder->TopVertices[0], Origin);
+    }
+    glEnd();
+}
+
 void OpenGLDrawBox(box * Box, v3f Center)
 {
     glBegin(GL_TRIANGLE_STRIP);
@@ -78,7 +167,7 @@ inline void OpenGLDrawEllipse(ellipse *Ellipse, v3f Center)
     {
         glVertex3f(Center.x, Center.y, Center.z);
         
-        for (int i = 0; i < CIRCLE_VERTICES; i++)
+        for (int i = 0; i < MaxCircleVertices; i++)
         {
             glVertex3f(Ellipse->Points[i].x + Center.x, 
                        Ellipse->Points[i].y + Center.y, 
@@ -100,7 +189,7 @@ inline void OpenGLDrawCircle(circle *Circle, v3f Center)
         glTexCoord2f(0, 0);
         glVertex3f(Center.x, Center.y, Center.z);
         
-        for (int i = 0; i < CIRCLE_VERTICES; i++)
+        for (int i = 0; i < MaxCircleVertices; i++)
         {
             glNormal3f(0,0,1);
             glTexCoord2f(1.0 * Circle->TexelPoints[i].x, 1.0 * Circle->TexelPoints[i].y);
@@ -124,7 +213,7 @@ void DrawShape(shape *Shape, v3f Position, texture *Texture)
     {
         if (Texture)
         {
-            BindTexture(Texture->Id, Texture->Material);
+            SetMaterialAndTexture(Texture->Id, Texture->Material);
         }
         
         else
@@ -174,13 +263,14 @@ void DrawShape(shape *Shape, v3f Position, texture *Texture)
                 OpenGLDrawSphere(&Shape->Sphere, Position);
             } break;
             
+            case Shape_Cylinder:
+            {
+                OpenGLDrawCylinder(&Shape->Cylinder, Position);
+            } break;
+            
             case Shape_Box:
             {
                 OpenGLDrawBox(&Shape->Box, Position);
-            } break;
-            
-            case Shape_Composed:
-            {
             } break;
             
             default:{ASSERT(0);};

@@ -42,6 +42,7 @@ typedef enum entity_type
     Entity_Enemy,
     Entity_Bullet,
     Entity_Static,
+    Entity_Wall,
 } entity_type;
 
 typedef enum entity_state
@@ -270,6 +271,7 @@ typedef struct game
 } game;
 
 float JumpHeight = 40.0f;
+float HeightWhenPressedJumpButton = 0.0;
 
 uint WindowWidth = 600;
 uint WindowHeight = 600;
@@ -281,9 +283,11 @@ entity *SaveGlobalBullets;
 
 bool ShotFired = false;
 
+material StandardMaterial;
 texture FloorTexture;
 texture BulletTexture;
 texture FloorNormalTexture;
+texture WallTexture;
 
 bool GameEndedWithVictory = false;
 bool GameEndedWithFailure = false;

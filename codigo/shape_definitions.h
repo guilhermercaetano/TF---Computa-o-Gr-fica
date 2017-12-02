@@ -1,7 +1,7 @@
 #ifndef SHAPE_DEFINITIONS_H
 #define SHAPE_DEFINITIONS_H
 
-#define CIRCLE_VERTICES 60
+#define MaxCircleVertices 60
 #define SHAPE_VERTICES 60
 
 struct material
@@ -58,15 +58,18 @@ struct cylinder
 {
     float Radius;
     float Height;
-    vertex *Vertex;
+    
+    vertex BaseVertices[MaxCircleVertices];
+    vertex TopVertices[MaxCircleVertices];
+    vertex Vertices[2 * MaxCircleVertices];
 };
 
 typedef struct circle
 {
     float Radius;
     // TODO: Usar vértices para fazer o cálculo dos texels
-    v2f TexelPoints[CIRCLE_VERTICES];
-    v3f Points[CIRCLE_VERTICES];
+    v2f TexelPoints[MaxCircleVertices];
+    v3f Points[MaxCircleVertices];
 } circle;
 
 typedef struct ellipse

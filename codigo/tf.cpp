@@ -684,9 +684,18 @@ void UpdateAndDrawEntity(entity *Entity)
             }
         } break;
         
-        case Entity_Static:
-        case Entity_ShortObstacle:
+        case Entity_Wall:
         case Entity_CenterLimit:
+        {
+            DrawShape(&Entity->Static.Shape, Entity->Static.Origin, &WallTexture);
+        } break;
+        
+        case Entity_ShortObstacle:
+        {
+            DrawShape(&Entity->Static.Shape, Entity->Static.Origin, &FloorTexture);
+        } break;
+        
+        case Entity_Static:
         {
             DrawShape(&Entity->Static.Shape, Entity->Static.Origin, 0);
         } break;
@@ -717,13 +726,19 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             CircleCenter.x = Center.x - SVGC->Radius;
             CircleCenter.y = Center.y - SVGC->Radius;
             CenterRadius = SVGC->Radius;
+            
+            Game.EntityCount++;
+            Entity++;
+            Center = {SVGC->CenterX, SVGC->CenterY, -10.0f};
+            CreateEntityStatic(Entity, Entity_Wall, Blue, 15, 300.0, SVGC->Radius, Center);
         }
         
         else if (strncmp(SVGC->Fill, "white", strlen("white")) == 0)
         {
-            v3f Center = {SVGC->CenterX, SVGC->CenterY, 3.0f};
+            float Height = 200.0;
+            v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.1};
             Game.Arena.CenterLimit = 
-                CreateEntityStatic(Entity, Entity_CenterLimit, White, SVGC->Id, 3.0f, 
+                CreateEntityStatic(Entity, Entity_CenterLimit, White, SVGC->Id, Height, 
                                    SVGC->Radius, Center);
         }
         
@@ -744,10 +759,9 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
         
         else if (strncmp(SVGC->Fill, "black", strlen("black")) == 0)
         {
-            
             // TODO: Revisar esta fórmula
             float PlatformHeight = JumpHeight * (float)(Game.ObstaclesHeight / 100.0);
-            v3f Center = {SVGC->CenterX, SVGC->CenterY, PlatformHeight};
+            v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.1};
             CreateEntityStatic(Entity, Entity_ShortObstacle, Black, SVGC->Id,
                                PlatformHeight, SVGC->Radius, Center);
         }
@@ -788,7 +802,8 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
         
         else if (Entity->Header.Type == Entity_Static ||
                  Entity->Header.Type == Entity_ShortObstacle ||
-                 Entity->Header.Type == Entity_CenterLimit)
+                 Entity->Header.Type == Entity_CenterLimit ||
+                 Entity->Header.Type == Entity_Wall)
         {
             Entity->Static.Origin.x = Entity->Static.Origin.x - CircleCenter.x;
             Entity->Static.Origin.y = 2 * CenterRadius - (Entity->Static.Origin.y - CircleCenter.y);
@@ -947,6 +962,11 @@ inline void DrawGame(arena Arena)
         {
             UpdateAndDrawEntity(Entity);
         }
+        
+        if (Entity->Header.Type == Entity_Wall)
+        {
+            UpdateAndDrawEntity(Entity);
+        }
     }
 }
 
@@ -1021,7 +1041,7 @@ void Display(void)
     glLightfv(GL_LIGHT0, GL_POSITION, LighPosition);
     
     DrawGame(Game.Arena);
-    DrawShape(&Wall1, V3f(0, 0, 0), 0);
+    //DrawShape(&Wall1, V3f(0, 0, 0), 0);
     UpdateAndDrawEntity(Game.Player);
     
     for (int i = 0; i < GlobalBulletsCount; i++)
@@ -1171,7 +1191,7 @@ void PlayerJump(entity_player *Player)
     //Player->Position.z *= 1.03;
     Player->Header->Origin.z = Player->Position.z;
     
-    float HeightToJump = fabs(JumpHeight - Player->Position.z);
+    float HeightToJump = fabs(JumpHeight + HeightWhenPressedJumpButton - Player->Position.z);
     
     if (Player->Dynamics.Ascending)
     {
@@ -1293,7 +1313,6 @@ void MovePlayer(entity_player *Player)
                             Player->Dynamics.Collision = true;
                         }
                     }
-                    
                 } break;
                 
                 case Entity_Background:
@@ -1450,6 +1469,8 @@ inline void ProcessInput(input Input, entity_player *Player)
             float GH = 
                 GravityAccelerationScale * GRAVITY_ACCELERATION * JumpHeight;
             Player->Velocity.z = sqrt(2 * GH);
+            
+            HeightWhenPressedJumpButton = Player->Position.z;
         }
     }
     
@@ -1504,14 +1525,17 @@ void CameraUpdate()
         CameraPerspMoved = false;
     }
     
+    float CameraMotionVelocity = 0.8;
+    
     if ((NewCameraTheta - PlayerAngle) >= -PI)
     {
-        CameraPerspectiveTheta -= 0.9 * Game.Timing.deltaTime;
+        
+        CameraPerspectiveTheta -= CameraMotionVelocity * Game.Timing.deltaTime;
     }
     
     else if (NewCameraTheta - PlayerAngle <= -2 * PI)
     {
-        CameraPerspectiveTheta += 0.9 * Game.Timing.deltaTime;
+        CameraPerspectiveTheta += CameraMotionVelocity * Game.Timing.deltaTime;
     }
     
     glClearColor(0.0, 0.0, 0.0, 1.0);
@@ -1550,7 +1574,7 @@ void CameraUpdate()
 #else 
     // NOTA: Câmera em terceira pessoa olhando para o jogador
     
-    float CamBoundingSphereR = 200.0;
+    float CamBoundingSphereR = 150.0;
     float CameraXOffset = PlayerP.x + CamBoundingSphereR * sinf(CameraPerspectivePhi) * cosf(CameraPerspectiveTheta);
     float CameraYOffset = PlayerP.y + CamBoundingSphereR * sinf(CameraPerspectivePhi) * sinf(CameraPerspectiveTheta);
     float CameraZOffset = PlayerP.z + CamBoundingSphereR * cosf(CameraPerspectivePhi);
@@ -1592,12 +1616,12 @@ void Reshape(int Width, int Height)
     
     if (Width <= Height)
     {
-        gluPerspective(60, (float)Height/(float)Width, 10, 600);
+        gluPerspective(60, (float)Height/(float)Width, 20, 2000);
     }
     
     else
     {
-        gluPerspective(60, (float)Width/(float)Height, 2, 500);
+        gluPerspective(60, (float)Width/(float)Height, 20, 2000);
     }
     
     glMatrixMode(GL_MODELVIEW);
@@ -1618,28 +1642,17 @@ void Init()
     FloorTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128.bmp");
     BulletTexture.Id = LoadTextureRAW("texture/sun1.bmp");
     FloorNormalTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128_normal.bmp");
+    WallTexture.Id = LoadTextureRAW("texture/Stucco_pxr128.bmp");
     
-    FloorTexture.Material = {};
-    FloorTexture.Material.Emission = {1.0, 1.0, 1.0, 1};
-    FloorTexture.Material.ColorA = {0.2, 0.2, 0.2, 1};
-    FloorTexture.Material.ColorD = {1.0, 1.0, 1.0, 1};
-    FloorTexture.Material.Specular = {1.0, 1.0, 1.0, 1};
-    FloorTexture.Material.Shininess = {100.0};
+    StandardMaterial.Emission = {0.8, 0.8, 0.8, 1};
+    StandardMaterial.ColorA = {0.2, 0.2, 0.2, 1};
+    StandardMaterial.ColorD = {1.0, 1.0, 1.0, 1};
+    StandardMaterial.Specular = {1.0, 1.0, 1.0, 1};
+    StandardMaterial.Shininess = {80.0};
     
-    BulletTexture.Material = FloorTexture.Material;
-    
-    Wall1.ColorFill = Blue;
-    Wall1.Type = Shape_Rectangle;
-    Wall1.Origin = {0, 0, 0};
-    Wall1.OffsetFromOrigin = {0, 0, 100};
-    Wall1.Bases = {};
-    Wall1.Bases.xAxis = {1.0, 0, 0};
-    Wall1.Bases.yAxis = {0, 1.0, 0};
-    Wall1.Bases.zAxis = {0, 0, 1.0};
-    Wall1.Rectangle.Width = 600;
-    Wall1.Rectangle.Height = 200;
-    
-    CalcWallVertices(&(Wall1.Rectangle), 600);
+    FloorTexture.Material = StandardMaterial;
+    BulletTexture.Material = StandardMaterial;
+    WallTexture.Material = StandardMaterial;
     
     memset(Game.Input.Mouse.ButtonState, -1, 3);
 }

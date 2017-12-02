@@ -51,7 +51,7 @@ void CalcEllipsePoints(ellipse *Ellipse, float Height)
         Ellipse->Points[i].y = NewYPosition;
         Ellipse->Points[i].z = Height;
         
-        Phi = ((float)(i+1) / CIRCLE_VERTICES) * 2 * PI;
+        Phi = ((float)(i+1) / MaxCircleVertices) * 2 * PI;
     }
 }
 
@@ -59,7 +59,7 @@ void CalcCircleVertices(circle *Circle, float Height)
 {
     float Phi = 0.0f;
     
-    for (int i = 0; i < CIRCLE_VERTICES; i++)
+    for (int i = 0; i < MaxCircleVertices; i++)
     {
         float CosPhi = cosf(Phi);
         float SinPhi = sinf(Phi);
@@ -73,7 +73,7 @@ void CalcCircleVertices(circle *Circle, float Height)
         Circle->TexelPoints[i].x = CosPhi;
         Circle->TexelPoints[i].y = SinPhi;
         
-        Phi = ((float)(i+1) / CIRCLE_VERTICES) * 2 * PI;
+        Phi = ((float)(i+1) / MaxCircleVertices) * 2 * PI;
     }
 }
 
@@ -184,7 +184,6 @@ box * CalcBoxPoints(box * Box)
     Box->Vertex[1].Coordinate.x = Box->Width/2;
     Box->Vertex[1].Coordinate.y = -Box->Height/2;
     Box->Vertex[1].Coordinate.z = -Box->Depth/2;
-    
     Box->Vertex[5].Coordinate.x = Box->Width/2;
     Box->Vertex[5].Coordinate.y = -Box->Height/2;
     Box->Vertex[5].Coordinate.z = -Box->Depth/2;
@@ -226,8 +225,99 @@ box * CalcBoxPoints(box * Box)
     Box->Vertex[9].Coordinate.z = Box->Depth/2;
 }
 
+// TODO: Esta é a forma mais simples e direta ao ponto de se calcular
+// os pontos que definem um cilindro no espaco tridimensional, considerando
+// a altura desse cilindro.
 void CalcCylinderPoints(cylinder *Cylinder, float Height)
 {
+    float Phi = 0.0f;
+    
+    // NOTA: Calculando pontos para a base inferior do cilindro
+    for (int i = 0; i < MaxCircleVertices; i++)
+    {
+        float CosPhi = cosf(Phi);
+        float SinPhi = sinf(Phi);
+        float NewXPosition = Cylinder->Radius * CosPhi;
+        float NewYPosition = Cylinder->Radius * SinPhi;
+        
+        Cylinder->BaseVertices[i].Coordinate.x = NewXPosition;
+        Cylinder->BaseVertices[i].Coordinate.y = NewYPosition;
+        Cylinder->BaseVertices[i].Coordinate.z = 0.0;
+        
+        Cylinder->BaseVertices[i].Normal = V3f(0, 0, 1);
+        
+        Cylinder->BaseVertices[i].UVCoordinate.x = CosPhi;
+        Cylinder->BaseVertices[i].UVCoordinate.y = SinPhi;
+        
+        Phi = ((float)(i+1) / MaxCircleVertices) * 2 * PI;
+    }
+    
+    // NOTA: Calculando pontos para a base superior do cilindro
+    Phi = 0.0f;
+    for (int i = 0; i < MaxCircleVertices; i++)
+    {
+        float CosPhi = cosf(Phi);
+        float SinPhi = sinf(Phi);
+        float NewXPosition = Cylinder->Radius * CosPhi;
+        float NewYPosition = Cylinder->Radius * SinPhi;
+        
+        Cylinder->TopVertices[i].Coordinate.x = NewXPosition;
+        Cylinder->TopVertices[i].Coordinate.y = NewYPosition;
+        Cylinder->TopVertices[i].Coordinate.z = Cylinder->Height;
+        
+        Cylinder->TopVertices[i].Normal = V3f(0, 0, -1);
+        
+        Cylinder->TopVertices[i].UVCoordinate.x = CosPhi;
+        Cylinder->TopVertices[i].UVCoordinate.y = SinPhi;
+        
+        Phi = ((float)(i+1) / MaxCircleVertices) * 2 * PI;
+    }
+    
+    // NOTA: Calculando pontos para a superfície lateral do cilindro
+    Cylinder->Vertices[0].Coordinate.x = Cylinder->BaseVertices[0].Coordinate.x;
+    Cylinder->Vertices[0].Coordinate.y = Cylinder->BaseVertices[0].Coordinate.y;
+    Cylinder->Vertices[0].Coordinate.z = Cylinder->BaseVertices[0].Coordinate.z;
+    Cylinder->Vertices[0].Normal = Normalize(Cylinder->Vertices[0].Coordinate);
+    Cylinder->Vertices[0].UVCoordinate.x = 0.0;
+    Cylinder->Vertices[0].UVCoordinate.y = 0.0;
+    
+    Cylinder->Vertices[1].Coordinate.x = Cylinder->BaseVertices[1].Coordinate.x;
+    Cylinder->Vertices[1].Coordinate.y = Cylinder->BaseVertices[1].Coordinate.y;
+    Cylinder->Vertices[1].Coordinate.z = Cylinder->BaseVertices[1].Coordinate.z;
+    Cylinder->Vertices[1].Normal = Normalize(Cylinder->Vertices[1].Coordinate);
+    Cylinder->Vertices[1].UVCoordinate.x = 2 * PI / MaxCircleVertices;
+    Cylinder->Vertices[1].UVCoordinate.y = 0.0;
+    
+    Cylinder->Vertices[2].Coordinate.x = Cylinder->TopVertices[0].Coordinate.x;
+    Cylinder->Vertices[2].Coordinate.y = Cylinder->TopVertices[0].Coordinate.y;
+    Cylinder->Vertices[2].Coordinate.z = Cylinder->TopVertices[0].Coordinate.z;
+    Cylinder->Vertices[2].Normal = Normalize(Cylinder->Vertices[2].Coordinate);
+    Cylinder->Vertices[2].UVCoordinate.x = 0.0;
+    Cylinder->Vertices[2].UVCoordinate.y = 1.0;
+    
+    Cylinder->Vertices[3].Coordinate.x = Cylinder->TopVertices[1].Coordinate.x;
+    Cylinder->Vertices[3].Coordinate.y = Cylinder->TopVertices[1].Coordinate.y;
+    Cylinder->Vertices[3].Coordinate.z = Cylinder->TopVertices[1].Coordinate.z;
+    Cylinder->Vertices[3].Normal = Normalize(Cylinder->Vertices[3].Coordinate);
+    Cylinder->Vertices[3].UVCoordinate.x = 2 * PI / MaxCircleVertices;
+    Cylinder->Vertices[3].UVCoordinate.y = 1.0;
+    
+    for (int i = 2; i < MaxCircleVertices; i++)
+    {
+        Cylinder->Vertices[2*i].Coordinate.x = Cylinder->BaseVertices[i].Coordinate.x;
+        Cylinder->Vertices[2*i].Coordinate.y = Cylinder->BaseVertices[i].Coordinate.y;
+        Cylinder->Vertices[2*i].Coordinate.z = Cylinder->BaseVertices[i].Coordinate.z;
+        Cylinder->Vertices[2*i].Normal = Normalize(Cylinder->Vertices[2*i].Coordinate);
+        Cylinder->Vertices[2*i].UVCoordinate.x = i * 2 * PI / MaxCircleVertices;
+        Cylinder->Vertices[2*i].UVCoordinate.y = 0.0;
+        
+        Cylinder->Vertices[2*i+1].Coordinate.x = Cylinder->TopVertices[i].Coordinate.x;
+        Cylinder->Vertices[2*i+1].Coordinate.y = Cylinder->TopVertices[i].Coordinate.y;
+        Cylinder->Vertices[2*i+1].Coordinate.z = Cylinder->TopVertices[i].Coordinate.z;
+        Cylinder->Vertices[2*i+1].Normal = Normalize(Cylinder->Vertices[2*i+1].Coordinate);
+        Cylinder->Vertices[2*i+1].UVCoordinate.x = i * 2 * PI / MaxCircleVertices;
+        Cylinder->Vertices[2*i+1].UVCoordinate.y = 1.0;
+    }
     
 }
 

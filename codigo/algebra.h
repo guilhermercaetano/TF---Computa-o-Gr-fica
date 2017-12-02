@@ -21,12 +21,19 @@ struct v2f
     };
 };
 
-typedef struct v3f
+struct v3f
 {
-    float x;
-    float y;
-    float z;
-} v3f;
+    union
+    {
+        struct
+        {
+            float x;
+            float y;
+            float z;
+        };
+        float fv[3];
+    };
+};
 
 struct v4f
 {
@@ -42,6 +49,15 @@ struct v4f
         float fv[4];
     };
     
+};
+
+struct v3
+{
+    union
+    {
+        v3f V3f;
+        float Vfl[3];
+    };
 };
 
 struct v4
@@ -101,11 +117,13 @@ typedef struct bases
     
 } bases;
 
+v2f operator*(v2f V, float F);
+v2f operator*(float F, v2f V);
+
 v3f operator+=(v3f &, v3f);
 v3f operator-=(v3f &, v3f);
 v3f operator-(v3f, v3f);
 v3f operator+(v3f, v3f);
-
 v3f operator+(v3f, float);
 v3f operator+(float, v3f);
 v3f operator*=(v3f &, float);

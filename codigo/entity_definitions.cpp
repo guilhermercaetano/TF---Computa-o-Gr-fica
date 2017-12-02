@@ -52,12 +52,13 @@ CreateEntityStatic(entity *Entity, entity_type Type, svg_color_names Color, int 
     Entity->Static.Header = &Entity->Header;
     Entity->Static.Origin = Origin;
     Entity->Static.Shape.ColorFill = Color;
-    Entity->Static.Shape.Type = Shape_Circle;
-    Entity->Static.Shape.Circle.Radius = Radius;
-    Entity->Static.Shape.Origin = V3f(0, 0, 0);
     
-    //CalcShapePoints(&Entity->Static.Shape, Height);
-    CalcShapePoints(&Entity->Static.Shape, 0);
+    Entity->Static.Shape.Type = Shape_Cylinder;
+    Entity->Static.Shape.Cylinder.Radius = Radius;
+    Entity->Static.Shape.Cylinder.Height = Height;
+    Entity->Static.Shape.Transform.Translation = V3f(0, 0, 0);
+    
+    CalcShapePoints(&Entity->Static.Shape, 0.0);
     return Entity;
 }
 
@@ -96,29 +97,11 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Player.Body.RightArm.ColorFill = Green;
     Entity->Player.Body.RightArm.Type = Shape_Box;
-    Entity->Player.Body.RightArm.Origin = v3f{1.3f * Radius, 0, 40};
-    Entity->Player.Body.RightArm.OffsetFromOrigin = V3f(0, 0, 15);
+    Entity->Player.Body.RightArm.Origin = v3f{1.3f * Radius, 0, 50};
+    Entity->Player.Body.RightArm.OffsetFromOrigin = V3f(0, 0, 10);
     Entity->Player.Body.RightArm.Box.Width = 10;
     Entity->Player.Body.RightArm.Box.Height = 10;
     Entity->Player.Body.RightArm.Box.Depth = 30;
-    
-    
-#if 0
-    Entity->Player.Body.RightArm.Bases.xAxis = v3f{1.0, 0.0, 0.0};
-    Entity->Player.Body.RightArm.Bases.yAxis = v3f{0.0, 1.0, 0.0};
-    Entity->Player.Body.RightArm.Bases.zAxis = v3f{0.0, 0.0, 1.0};
-    Entity->Player.Body.RightArm.Bases.Angle = 0;
-    
-    m3 xAxisRotationMatrix = {
-        1, 0, 0,
-        0, cosf(90.0), sinf(90.0),
-        0, -sinf(90.0), cosf(90.0)
-    };
-    
-    Entity->Player.Body.RightArm.Bases.yAxis = {0, cosf(-90.0), sinf(-90.0)};
-    Entity->Player.Body.RightArm.Bases.zAxis = {0, -sinf(-90.0), cosf(-90.0)};
-    Entity->Player.Body.RightArm.Bases.Angle = -90.0;
-#endif
     
     float AngleToRotate = -PI / 2;
     Entity->Player.Body.RightArm.Transform.Rotation.x = AngleToRotate;
@@ -138,8 +121,8 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Entity->Player.Body.Torso.ColorFill = Green;
     Entity->Player.Body.Torso.Type = Shape_Box;
     Entity->Player.Body.Torso.Origin = v3f{0.0f, 0.0f, 40.0};
-    Entity->Player.Body.Torso.Box.Width = 1.6f * Radius;
-    Entity->Player.Body.Torso.Box.Height = 0.6f * Radius;
+    Entity->Player.Body.Torso.Box.Width = 2.0 * Radius;
+    Entity->Player.Body.Torso.Box.Height = 0.7 * Radius;
     Entity->Player.Body.Torso.Box.Depth = 1.5 * Radius;
     
     Entity->Player.Body.Head.ColorFill = Green;

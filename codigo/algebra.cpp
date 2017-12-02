@@ -121,6 +121,20 @@ v3f operator*(m3x3 M, v3f V)
     return Result;
 }
 
+v2f operator*(v2f V, float F)
+{
+    v2f R;
+    R.x = V.x * F;
+    R.y = V.y * F;
+    
+    return R;
+}
+
+v2f operator*(float F, v2f V)
+{
+    return V * F;
+}
+
 m3x3 Transpose(m3x3 M)
 {
     return (m3x3{
