@@ -729,8 +729,8 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             
             Game.EntityCount++;
             Entity++;
-            Center = {SVGC->CenterX, SVGC->CenterY, -10.0f};
-            CreateEntityStatic(Entity, Entity_Wall, Blue, 15, 300.0, SVGC->Radius, Center);
+            Center = {SVGC->CenterX, SVGC->CenterY, -20.0f};
+            CreateEntityStatic(Entity, Entity_Wall, Blue, 15, 300.0, SVGC->Radius, Center, true);
         }
         
         else if (strncmp(SVGC->Fill, "white", strlen("white")) == 0)
@@ -739,7 +739,7 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.1};
             Game.Arena.CenterLimit = 
                 CreateEntityStatic(Entity, Entity_CenterLimit, White, SVGC->Id, Height, 
-                                   SVGC->Radius, Center);
+                                   SVGC->Radius, Center, false);
         }
         
         else if (strncmp(SVGC->Fill, "green", strlen("green")) == 0)
@@ -763,7 +763,7 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             float PlatformHeight = JumpHeight * (float)(Game.ObstaclesHeight / 100.0);
             v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.1};
             CreateEntityStatic(Entity, Entity_ShortObstacle, Black, SVGC->Id,
-                               PlatformHeight, SVGC->Radius, Center);
+                               PlatformHeight, SVGC->Radius, Center, false);
         }
         
         else
@@ -1036,9 +1036,37 @@ void PrintText(GLfloat x, GLfloat y, const char * text, double r, double g, doub
 
 void Display(void)
 {
-    
-    GLfloat LighPosition[] = { 300.0, 300.0, 300.0, 1.0 };
+    GLfloat LighPosition[] = { 0.0, 0.0, 100.0, 1.0 };
     glLightfv(GL_LIGHT0, GL_POSITION, LighPosition);
+    
+    v3f PlayerP = Game.Player->Player.Position;
+    bases PlayerBases = Game.Player->Player.Bases;
+    
+    v3f SpotlightDirection;
+#if 0
+    SpotlightDirection.x = 1.0 * PlayerBases.yAxis.x;
+    SpotlightDirection.y = 1.0 * PlayerBases.yAxis.y;
+    SpotlightDirection.z = 1.0 * PlayerBases.yAxis.z;
+#else 
+    SpotlightDirection = Game.Player->Player.Bases.yAxis;
+#endif
+    v3f Pos = V3f(0, 1, 0);
+    v4f Position = v4f{PlayerP.x, PlayerP.y, 1, 1};
+    printf("%.2f %.2f %.2f\n", SpotlightDirection.x, SpotlightDirection.y, SpotlightDirection.z);
+    glLightfv(GL_LIGHT1, GL_POSITION, Position.fv);
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, SpotlightDirection.fv);
+    
+    if (FlashLightOn)
+    {
+        glEnable(GL_LIGHT0); 
+        glEnable(GL_LIGHT1); 
+    }
+    
+    else
+    {
+        glDisable(GL_LIGHT0); 
+        //glDisable(GL_LIGHT1); 
+    }
     
     DrawGame(Game.Arena);
     //DrawShape(&Wall1, V3f(0, 0, 0), 0);
@@ -1149,6 +1177,11 @@ void ProcessKeyUp(unsigned char Key, int X, int Y)
 void ProcessKeyboard(unsigned char Key, int X, int Y)
 {
     Game.Input.Keyboard[Key] = true;
+    
+    if (Key == 'g')
+    {
+        FlashLightOn = !FlashLightOn;
+    }
 }
 
 inline 
@@ -1283,7 +1316,8 @@ void MovePlayer(entity_player *Player)
                 {
                     if (Entity->Header.State & EntityState_Active)
                     {
-                        v3f d = Player->Position + NewdeltaPos - Entity->Static.Origin;
+                        float ToWallDist = 6.0;
+                        v3f d = Player->Position + ToWallDist * NewdeltaPos - Entity->Static.Origin;
                         d.z = 0;
                         float dCenter = VectorSize(d);
                         sphere Sphere = Player->Body.Head.Sphere; 
@@ -1294,7 +1328,7 @@ void MovePlayer(entity_player *Player)
                             v3f Normal = d / dCenter;
                             Player->Velocity = Player->Velocity - 1 * DotProduct(Player->Velocity, Normal) * Normal;
                             // TODO: Multiplicação por 0.05f é apenas um hack para evitar deslizamento exagerado
-                            NewdeltaPos += 0.05f * Player->Velocity * Game.Timing.deltaTime + 1 * Normal;
+                            NewdeltaPos += 0.05f * Player->Velocity * Game.Timing.deltaTime + 1.0 * Normal;
                             Player->Dynamics.Collision = true;
                         }
                     }
@@ -1302,7 +1336,8 @@ void MovePlayer(entity_player *Player)
                 
                 case Entity_Background:
                 {
-                    v3f d = Entity->Background.Origin - NewRelPos - Player->Position;
+                    float ToWallDist = 6.0;
+                    v3f d = Entity->Background.Origin - ToWallDist * NewRelPos - Player->Position;
                     d.z = 0;
                     float dCenter = VectorSize(d) + Player->Body.Head.Sphere.Radius;
                     
@@ -1311,7 +1346,7 @@ void MovePlayer(entity_player *Player)
                         v3f Normal = Normalize(d);
                         float Dot = DotProduct(Player->Velocity, Normal);
                         Player->Velocity = Player->Velocity - 1 * Dot * Normal;
-                        NewdeltaPos += 0.05f * Player->Velocity * Game.Timing.deltaTime + Normal;
+                        NewdeltaPos += 0.05f * Player->Velocity * Game.Timing.deltaTime + 0.5 * Normal;
                         
                         Player->Dynamics.Collision = true;
                     }
@@ -1462,16 +1497,16 @@ inline void ProcessInput(input Input, entity_player *Player)
     if (Input.Keyboard['1'])
     {
         ToFirstPersonCamTransition = true;
-        GlobalActiveCamType = Camera_FirstPersonGun;
+        Game.Camera.Type = Camera_FirstPersonGun;
     }
     else if (Input.Keyboard['2'])
     {
-        GlobalActiveCamType = Camera_FirstPersonEye;
+        Game.Camera.Type = Camera_FirstPersonEye;
     }
     else if (Input.Keyboard['3'])
     {
         ToThirdPersonCamTransition = true;
-        GlobalActiveCamType = Camera_ThirdPerson;
+        Game.Camera.Type = Camera_ThirdPerson;
     }
     
     if (ShotFired && !Player->Jumping && !Player->Dynamics.PlatformAllow)
@@ -1534,22 +1569,19 @@ inline bool CameraLerp(v3f *Source, v3f *Dest)
         (Source->y >= 0.9*Dest->y && Source->y <= 1.1*Dest->y) &&
         (Source->z >= 0.9*Dest->z && Source->z <= 1.1*Dest->z))
     {
-        ToFirstPersonCamTransition = false;
-        
         return false;
     }
     
     return true;
 }
 
-void CameraUpdate()
+void CameraUpdate(camera *Camera)
 {
     // NOTA: Código relativo ao tratamento da câmera em coordenadas cilindricas
     float RelativeDistXTraveled = DistTraveledLastFrame.x / WindowWidth;
     float RelativeDistYTraveled = DistTraveledLastFrame.y / WindowHeight;
-    float CameraSensitivity = 0.6;
-    float NewCameraPhi = CameraPerspectivePhi + PI * CameraSensitivity * RelativeDistYTraveled;
-    float NewCameraTheta = CameraPerspectiveTheta + PI * CameraSensitivity * RelativeDistXTraveled;
+    float NewCameraPhi = CameraPerspectivePhi + PI * Camera->Sensitivity * RelativeDistYTraveled;
+    float NewCameraTheta = CameraPerspectiveTheta + PI * Camera->Sensitivity * RelativeDistXTraveled;
     float PlayerAngle = Game.Player->Player.Transform.Rotation.z;
     
     if (CameraPerspMoved)
@@ -1559,8 +1591,8 @@ void CameraUpdate()
             (NewCameraTheta - PlayerAngle < -PI) && 
             (NewCameraTheta - PlayerAngle > -2 * PI))
         {
-            CameraPerspectiveTheta += PI * CameraSensitivity * RelativeDistXTraveled;
-            CameraPerspectivePhi += PI * CameraSensitivity * RelativeDistYTraveled;
+            CameraPerspectiveTheta += PI * Camera->Sensitivity * RelativeDistXTraveled;
+            CameraPerspectivePhi += PI * Camera->Sensitivity * RelativeDistYTraveled;
         }
         
         GlobalLastXCoordinate = Game.Input.Mouse.Position.x;
@@ -1608,7 +1640,7 @@ void CameraUpdate()
     bases PlayerBases = Game.Player->Player.Bases;
     v3f PlayerP = Game.Player->Header.Origin;
     
-    if (GlobalActiveCamType == Camera_FirstPersonGun)
+    if (Camera->Type == Camera_FirstPersonGun)
     {
         v3f PointingGun;
         PointingGun.x = 0;
@@ -1629,25 +1661,26 @@ void CameraUpdate()
             TargetCamPoint.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
             TargetCamPoint.z = GunHeight+PlayerP.z;
             
-            CameraLerp(&GlobalCameraP, &TargetCamPoint);
+            ToFirstPersonCamTransition = CameraLerp(&Camera->P, &TargetCamPoint);
         }
         
         else
         {
-            GlobalCameraP.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
-            GlobalCameraP.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
-            GlobalCameraP.z = GunHeight + PlayerP.z;
+            Camera->P.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
+            Camera->P.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
+            Camera->P.z = GunHeight + PlayerP.z;
         }
         
         v3f PlayerLookingDir = V3f((PlayerP.x+CamHorizonDist*PlayerBases.yAxis.x), 
                                    (PlayerP.y+CamHorizonDist*PlayerBases.yAxis.y), 
                                    ((PlayerP.z+PointingGun.z)+CamHorizonDist*PlayerBases.zAxis.z));
-        gluLookAt(GlobalCameraP.x, GlobalCameraP.y, GlobalCameraP.z, 
+        
+        gluLookAt(Camera->P.x, Camera->P.y, Camera->P.z, 
                   PlayerLookingDir.x, PlayerLookingDir.y, PlayerLookingDir.z, 
-                  0, 0, 1);
+                  Camera->Up.x, Camera->Up.y, Camera->Up.z);
     }
     
-    else if (GlobalActiveCamType == Camera_ThirdPerson)
+    else if (Camera->Type == Camera_ThirdPerson)
     {
         // NOTA: Câmera em terceira pessoa olhando para o jogador
         float CamBoundingSphereR = 150.0;
@@ -1659,19 +1692,19 @@ void CameraUpdate()
             TargetCamP.y = PlayerP.y + CamBoundingSphereR * sinf(CameraPerspectivePhi) * sinf(CameraPerspectiveTheta);
             TargetCamP.z = PlayerP.z + CamBoundingSphereR * cosf(CameraPerspectivePhi);
             
-            CameraLerp(&GlobalCameraP, &TargetCamP);
+            ToThirdPersonCamTransition = CameraLerp(&Camera->P, &TargetCamP);
         }
         
         else
         {
-            GlobalCameraP.x = PlayerP.x + CamBoundingSphereR * sinf(CameraPerspectivePhi) * cosf(CameraPerspectiveTheta);
-            GlobalCameraP.y = PlayerP.y + CamBoundingSphereR * sinf(CameraPerspectivePhi) * sinf(CameraPerspectiveTheta);
-            GlobalCameraP.z = PlayerP.z + CamBoundingSphereR * cosf(CameraPerspectivePhi);
+            Camera->P.x = PlayerP.x + CamBoundingSphereR * sinf(CameraPerspectivePhi) * cosf(CameraPerspectiveTheta);
+            Camera->P.y = PlayerP.y + CamBoundingSphereR * sinf(CameraPerspectivePhi) * sinf(CameraPerspectiveTheta);
+            Camera->P.z = PlayerP.z + CamBoundingSphereR * cosf(CameraPerspectivePhi);
         }
         
-        gluLookAt(GlobalCameraP.x, GlobalCameraP.y, GlobalCameraP.z,
+        gluLookAt(Camera->P.x, Camera->P.y, Camera->P.z,
                   PlayerP.x, PlayerP.y, PlayerP.z + 50.0,
-                  0,0,1);
+                  Camera->Up.x,Camera->Up.y,Camera->Up.z);
     }
 }
 
@@ -1686,7 +1719,7 @@ void UpdateGame(int Value)
     }
     PlayerCollisionZ(Game.Arena, &Game.Player->Player);
     
-    CameraUpdate();
+    CameraUpdate(&Game.Camera);
     
     glutPostRedisplay();
     glutTimerFunc(Game.Timing.deltaTimeMs, UpdateGame, 0);
@@ -1703,12 +1736,12 @@ void Reshape(int Width, int Height)
     
     if (Width <= Height)
     {
-        gluPerspective(60, (float)Height/(float)Width, 20, 2000);
+        gluPerspective(60, (float)Height/(float)Width, 1, 2000);
     }
     
     else
     {
-        gluPerspective(60, (float)Width/(float)Height, 20, 2000);
+        gluPerspective(60, (float)Width/(float)Height, 1, 2000);
     }
     
     glMatrixMode(GL_MODELVIEW);
@@ -1722,25 +1755,34 @@ void Init()
     glShadeModel (GL_SMOOTH);
     
     glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
+    //glEnable(GL_LIGHT0);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
+    
+    float AmbientLight[] = {1.0, 1.0, 0.4, 1.0};
+    glLightfv(GL_LIGHT1, GL_AMBIENT, AmbientLight);
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 30.0);
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 1);
     
     FloorTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128.bmp");
     BulletTexture.Id = LoadTextureRAW("texture/sun1.bmp");
     FloorNormalTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128_normal.bmp");
     WallTexture.Id = LoadTextureRAW("texture/Stucco_pxr128.bmp");
     
-    StandardMaterial.Emission = {0.8, 0.8, 0.8, 1};
-    StandardMaterial.ColorA = {0.2, 0.2, 0.2, 1};
+    StandardMaterial.Emission = {0.4, 0.4, 0.4, 1};
+    StandardMaterial.ColorA = {0.4, 0.4, 0.4, 1};
     StandardMaterial.ColorD = {1.0, 1.0, 1.0, 1};
-    StandardMaterial.Specular = {1.0, 1.0, 1.0, 1};
+    StandardMaterial.Specular = {0.9, 0.9, 0.9, 1};
     StandardMaterial.Shininess = {80.0};
     
     FloorTexture.Material = StandardMaterial;
     BulletTexture.Material = StandardMaterial;
     WallTexture.Material = StandardMaterial;
     
+    // Inicializacao da camera
+    Game.Camera.Up = V3f(0.0, 0.0, 1.0);
+    Game.Camera.Sensitivity = 0.6;
+    Game.Camera.Type = Camera_FirstPersonGun;
     memset(Game.Input.Mouse.ButtonState, -1, 3);
 }
 

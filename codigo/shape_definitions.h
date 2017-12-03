@@ -59,6 +59,8 @@ struct cylinder
     float Radius;
     float Height;
     
+    bool InvSideNormals;
+    
     vertex BaseVertices[MaxCircleVertices];
     vertex TopVertices[MaxCircleVertices];
     vertex Vertices[2 * MaxCircleVertices];

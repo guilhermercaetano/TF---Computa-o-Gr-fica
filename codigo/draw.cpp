@@ -12,11 +12,11 @@ void SetMaterialAndTexture(uint TextureId, material Material)
 {
     glColor3f(1,1,1);
     
-    glMaterialfv(GL_FRONT, GL_EMISSION, Material.Emission.fv);
-    glMaterialfv(GL_FRONT, GL_AMBIENT, Material.ColorA.fv);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, Material.ColorD.fv);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, Material.Specular.fv);
-    glMaterialfv(GL_FRONT, GL_SHININESS, Material.Shininess.fv);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, Material.Emission.fv);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, Material.ColorA.fv);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, Material.ColorD.fv);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Material.Specular.fv);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, Material.Shininess.fv);
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);//X
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);//Y

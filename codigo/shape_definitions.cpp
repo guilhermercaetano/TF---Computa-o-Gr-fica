@@ -273,32 +273,34 @@ void CalcCylinderPoints(cylinder *Cylinder, float Height)
         Phi = ((float)(i+1) / MaxCircleVertices) * 2 * PI;
     }
     
+    int Inv = 1;
+    if (Cylinder->InvSideNormals) Inv = -1;
     // NOTA: Calculando pontos para a superfície lateral do cilindro
     Cylinder->Vertices[0].Coordinate.x = Cylinder->BaseVertices[0].Coordinate.x;
     Cylinder->Vertices[0].Coordinate.y = Cylinder->BaseVertices[0].Coordinate.y;
     Cylinder->Vertices[0].Coordinate.z = Cylinder->BaseVertices[0].Coordinate.z;
-    Cylinder->Vertices[0].Normal = Normalize(Cylinder->Vertices[0].Coordinate);
+    Cylinder->Vertices[0].Normal = Inv * Normalize(Cylinder->Vertices[0].Coordinate);
     Cylinder->Vertices[0].UVCoordinate.x = 0.0;
     Cylinder->Vertices[0].UVCoordinate.y = 0.0;
     
     Cylinder->Vertices[1].Coordinate.x = Cylinder->BaseVertices[1].Coordinate.x;
     Cylinder->Vertices[1].Coordinate.y = Cylinder->BaseVertices[1].Coordinate.y;
     Cylinder->Vertices[1].Coordinate.z = Cylinder->BaseVertices[1].Coordinate.z;
-    Cylinder->Vertices[1].Normal = Normalize(Cylinder->Vertices[1].Coordinate);
+    Cylinder->Vertices[1].Normal = Inv * Normalize(Cylinder->Vertices[1].Coordinate);
     Cylinder->Vertices[1].UVCoordinate.x = 2 * PI / MaxCircleVertices;
     Cylinder->Vertices[1].UVCoordinate.y = 0.0;
     
     Cylinder->Vertices[2].Coordinate.x = Cylinder->TopVertices[0].Coordinate.x;
-    Cylinder->Vertices[2].Coordinate.y = Cylinder->TopVertices[0].Coordinate.y;
+    Cylinder->Vertices[2].Coordinate.y = Cylinder->TopVertices[0].Coordinate.y; 
     Cylinder->Vertices[2].Coordinate.z = Cylinder->TopVertices[0].Coordinate.z;
-    Cylinder->Vertices[2].Normal = Normalize(Cylinder->Vertices[2].Coordinate);
+    Cylinder->Vertices[2].Normal = Inv * Normalize(Cylinder->Vertices[2].Coordinate);
     Cylinder->Vertices[2].UVCoordinate.x = 0.0;
     Cylinder->Vertices[2].UVCoordinate.y = 1.0;
     
     Cylinder->Vertices[3].Coordinate.x = Cylinder->TopVertices[1].Coordinate.x;
     Cylinder->Vertices[3].Coordinate.y = Cylinder->TopVertices[1].Coordinate.y;
     Cylinder->Vertices[3].Coordinate.z = Cylinder->TopVertices[1].Coordinate.z;
-    Cylinder->Vertices[3].Normal = Normalize(Cylinder->Vertices[3].Coordinate);
+    Cylinder->Vertices[3].Normal = Inv * Normalize(Cylinder->Vertices[3].Coordinate);
     Cylinder->Vertices[3].UVCoordinate.x = 2 * PI / MaxCircleVertices;
     Cylinder->Vertices[3].UVCoordinate.y = 1.0;
     
@@ -307,14 +309,14 @@ void CalcCylinderPoints(cylinder *Cylinder, float Height)
         Cylinder->Vertices[2*i].Coordinate.x = Cylinder->BaseVertices[i].Coordinate.x;
         Cylinder->Vertices[2*i].Coordinate.y = Cylinder->BaseVertices[i].Coordinate.y;
         Cylinder->Vertices[2*i].Coordinate.z = Cylinder->BaseVertices[i].Coordinate.z;
-        Cylinder->Vertices[2*i].Normal = Normalize(Cylinder->Vertices[2*i].Coordinate);
+        Cylinder->Vertices[2*i].Normal = Inv * Normalize(Cylinder->Vertices[2*i].Coordinate);
         Cylinder->Vertices[2*i].UVCoordinate.x = i * 2 * PI / MaxCircleVertices;
         Cylinder->Vertices[2*i].UVCoordinate.y = 0.0;
         
         Cylinder->Vertices[2*i+1].Coordinate.x = Cylinder->TopVertices[i].Coordinate.x;
         Cylinder->Vertices[2*i+1].Coordinate.y = Cylinder->TopVertices[i].Coordinate.y;
         Cylinder->Vertices[2*i+1].Coordinate.z = Cylinder->TopVertices[i].Coordinate.z;
-        Cylinder->Vertices[2*i+1].Normal = Normalize(Cylinder->Vertices[2*i+1].Coordinate);
+        Cylinder->Vertices[2*i+1].Normal = Inv * Normalize(Cylinder->Vertices[2*i+1].Coordinate);
         Cylinder->Vertices[2*i+1].UVCoordinate.x = i * 2 * PI / MaxCircleVertices;
         Cylinder->Vertices[2*i+1].UVCoordinate.y = 1.0;
     }

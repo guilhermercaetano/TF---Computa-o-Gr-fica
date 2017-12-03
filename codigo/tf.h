@@ -53,6 +53,13 @@ typedef enum entity_state
     EntityState_Active = 0x08,
 } entity_state;
 
+enum camera_type
+{
+    Camera_FirstPersonGun,
+    Camera_FirstPersonEye,
+    Camera_ThirdPerson,
+}; 
+
 // Definição SVG de um círculo
 // NOTA: Difere de circle pelo fato de que circle é a definição de um círclulo
 // para essa aplicação em particular
@@ -243,6 +250,15 @@ struct timing
 {
     float deltaTimeMs;
     float deltaTime;
+    float FramesPerSecond;
+};
+
+struct camera
+{
+    v3f P;
+    v3f Up;
+    float Sensitivity;
+    camera_type Type;
 };
 
 typedef struct game
@@ -251,8 +267,9 @@ typedef struct game
     entity *Player;
     timing Timing;
     input Input;
-    int FramesPerSecond;
+    camera Camera;
     
+    int FramesPerSecond;
     int EntityCount;
     entity *Entities;
     
@@ -300,18 +317,9 @@ v2f DistTraveledLastFrame = {};
 float CameraPerspectiveTheta = -4.696;
 float CameraPerspectivePhi = -0.900;
 
-enum camera_type
-{
-    Camera_FirstPersonGun,
-    Camera_FirstPersonEye,
-    Camera_ThirdPerson,
-}; 
-
-camera_type GlobalActiveCamType = Camera_FirstPersonGun;
 bool ToFirstPersonCamTransition = false;
 bool ToThirdPersonCamTransition = false;
 
-v3f GlobalCameraP = {};
-
+bool FlashLightOn = true;
 
 #endif
