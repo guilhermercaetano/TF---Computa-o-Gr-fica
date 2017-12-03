@@ -1037,7 +1037,7 @@ void PrintText(GLfloat x, GLfloat y, const char * text, double r, double g, doub
 void Display(void)
 {
     
-    GLfloat LighPosition[] = { 0.0, 0.0, 0.0, 1.0 };
+    GLfloat LighPosition[] = { 300.0, 300.0, 300.0, 1.0 };
     glLightfv(GL_LIGHT0, GL_POSITION, LighPosition);
     
     DrawGame(Game.Arena);
@@ -1052,21 +1052,7 @@ void Display(void)
         }
     }
     
-#if 0
-    glPushAttrib(GL_LIGHTING_BIT);
-    //glDisable(GL_LIGHTING);
-    
-    glPushMatrix();
-    
-    glColor3f(1, 0, 0);
-    glTranslatef(0, 0, 0);
-    glutSolidCube(20);
-    
-    glPopMatrix();
-    glPopAttrib();
-#endif
-    
-#if DEBUG_PLAYER_LINE
+#if !DEBUG_PLAYER_LINE
     OpenGLDrawLine(Game.Player->Player.Position, 
                    Game.Player->Player.Position + 100 * Game.Player->Player.Bases.yAxis, 
                    Colors[Red]);
@@ -1086,7 +1072,6 @@ void Display(void)
                    Game.Input.Mouse.Position, Colors[Lime]);
 #endif
     
-    //glFlush();
     glutSwapBuffers();
 }
 
@@ -1474,6 +1459,21 @@ inline void ProcessInput(input Input, entity_player *Player)
         }
     }
     
+    if (Input.Keyboard['1'])
+    {
+        ToFirstPersonCamTransition = true;
+        GlobalActiveCamType = Camera_FirstPersonGun;
+    }
+    else if (Input.Keyboard['2'])
+    {
+        GlobalActiveCamType = Camera_FirstPersonEye;
+    }
+    else if (Input.Keyboard['3'])
+    {
+        ToThirdPersonCamTransition = true;
+        GlobalActiveCamType = Camera_ThirdPerson;
+    }
+    
     if (ShotFired && !Player->Jumping && !Player->Dynamics.PlatformAllow)
     {
         CreateBulletEntity(GlobalBullets, Entity_Player, 100, Player->ArmHeight, Player->ShotVelocity,
@@ -1499,13 +1499,57 @@ inline void ProcessInput(input Input, entity_player *Player)
     }
 }
 
+inline bool CameraLerp(v3f *Source, v3f *Dest)
+{
+    v3f CamTransitionVelocity = {6.0, 6.0, 1.5};
+    
+    if (Source->x < 0.9*Dest->x)
+    {
+        Source->x += CamTransitionVelocity.x;
+    }
+    else if (Source->x > 1.1*Dest->x)
+    {
+        Source->x -= CamTransitionVelocity.x;
+    }
+    
+    if (Source->y < 0.9*Dest->y)
+    {
+        Source->y += CamTransitionVelocity.y;
+    }
+    else if (Source->y > 1.1*Dest->y)
+    {
+        Source->y -= CamTransitionVelocity.y;
+    }
+    
+    if (Source->z < 0.9*Dest->z)
+    {
+        Source->z += CamTransitionVelocity.z;
+    }
+    else if (Source->z > 1.1*Dest->z)
+    {
+        Source->z -= CamTransitionVelocity.z;
+    }
+    
+    if ((Source->x >= 0.9*Dest->x && Source->x <= 1.1*Dest->x) &&
+        (Source->y >= 0.9*Dest->y && Source->y <= 1.1*Dest->y) &&
+        (Source->z >= 0.9*Dest->z && Source->z <= 1.1*Dest->z))
+    {
+        ToFirstPersonCamTransition = false;
+        
+        return false;
+    }
+    
+    return true;
+}
+
 void CameraUpdate()
 {
     // NOTA: Código relativo ao tratamento da câmera em coordenadas cilindricas
     float RelativeDistXTraveled = DistTraveledLastFrame.x / WindowWidth;
     float RelativeDistYTraveled = DistTraveledLastFrame.y / WindowHeight;
-    float NewCameraPhi = CameraPerspectivePhi + PI * 0.6 * RelativeDistYTraveled;
-    float NewCameraTheta = CameraPerspectiveTheta + PI * 0.6 * RelativeDistXTraveled;
+    float CameraSensitivity = 0.6;
+    float NewCameraPhi = CameraPerspectivePhi + PI * CameraSensitivity * RelativeDistYTraveled;
+    float NewCameraTheta = CameraPerspectiveTheta + PI * CameraSensitivity * RelativeDistXTraveled;
     float PlayerAngle = Game.Player->Player.Transform.Rotation.z;
     
     if (CameraPerspMoved)
@@ -1515,8 +1559,8 @@ void CameraUpdate()
             (NewCameraTheta - PlayerAngle < -PI) && 
             (NewCameraTheta - PlayerAngle > -2 * PI))
         {
-            CameraPerspectiveTheta += PI * 0.6 * RelativeDistXTraveled;
-            CameraPerspectivePhi += PI * 0.6 * RelativeDistYTraveled;
+            CameraPerspectiveTheta += PI * CameraSensitivity * RelativeDistXTraveled;
+            CameraPerspectivePhi += PI * CameraSensitivity * RelativeDistYTraveled;
         }
         
         GlobalLastXCoordinate = Game.Input.Mouse.Position.x;
@@ -1564,28 +1608,71 @@ void CameraUpdate()
     bases PlayerBases = Game.Player->Player.Bases;
     v3f PlayerP = Game.Player->Header.Origin;
     
-#if 0 // Camera 1
-    v3f PlayerLookingDir = V3f(10 * PlayerP.x * PlayerBases.yAxis.x, 
-                               10 * PlayerP.y * PlayerBases.yAxis.y, 
-                               10 * PlayerP.z * PlayerBases.yAxis.z);
-    gluLookAt(PlayerP.x, PlayerP.y, 100.0 + PlayerP.z, 
-              PlayerLookingDir.x, PlayerLookingDir.y, PlayerLookingDir.z, 
-              0, 0, 1);
-#else 
-    // NOTA: Câmera em terceira pessoa olhando para o jogador
+    if (GlobalActiveCamType == Camera_FirstPersonGun)
+    {
+        v3f PointingGun;
+        PointingGun.x = 0;
+        PointingGun.y = PlayerP.y + 0.5 * (Game.Input.Mouse.Position.x-WindowWidth/2);
+        PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight/2;
+        
+        // TODO: Corrigir a altura da arma
+        float GunHeight = 70.0;
+        
+        float CamHorizonDist = 100.0;
+        float FirstPersonCamOffset = 20.0;
+        
+        // TODO: Transicao na mudanca de cameras
+        if (ToFirstPersonCamTransition)
+        {
+            v3f TargetCamPoint;
+            TargetCamPoint.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
+            TargetCamPoint.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
+            TargetCamPoint.z = GunHeight+PlayerP.z;
+            
+            CameraLerp(&GlobalCameraP, &TargetCamPoint);
+        }
+        
+        else
+        {
+            GlobalCameraP.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
+            GlobalCameraP.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
+            GlobalCameraP.z = GunHeight + PlayerP.z;
+        }
+        
+        v3f PlayerLookingDir = V3f((PlayerP.x+CamHorizonDist*PlayerBases.yAxis.x), 
+                                   (PlayerP.y+CamHorizonDist*PlayerBases.yAxis.y), 
+                                   ((PlayerP.z+PointingGun.z)+CamHorizonDist*PlayerBases.zAxis.z));
+        gluLookAt(GlobalCameraP.x, GlobalCameraP.y, GlobalCameraP.z, 
+                  PlayerLookingDir.x, PlayerLookingDir.y, PlayerLookingDir.z, 
+                  0, 0, 1);
+    }
     
-    float CamBoundingSphereR = 150.0;
-    float CameraXOffset = PlayerP.x + CamBoundingSphereR * sinf(CameraPerspectivePhi) * cosf(CameraPerspectiveTheta);
-    float CameraYOffset = PlayerP.y + CamBoundingSphereR * sinf(CameraPerspectivePhi) * sinf(CameraPerspectiveTheta);
-    float CameraZOffset = PlayerP.z + CamBoundingSphereR * cosf(CameraPerspectivePhi);
-    
-    gluLookAt(CameraXOffset, CameraYOffset, CameraZOffset,
-              PlayerP.x, PlayerP.y, PlayerP.z + 50.0,
-              0,0,1);
-    
-    printf("Phi: %.3f Theta: %.3f\n", CameraPerspectivePhi, CameraPerspectiveTheta);
-#endif
-    
+    else if (GlobalActiveCamType == Camera_ThirdPerson)
+    {
+        // NOTA: Câmera em terceira pessoa olhando para o jogador
+        float CamBoundingSphereR = 150.0;
+        
+        if (ToThirdPersonCamTransition)
+        {
+            v3f TargetCamP;
+            TargetCamP.x = PlayerP.x + CamBoundingSphereR * sinf(CameraPerspectivePhi) * cosf(CameraPerspectiveTheta);
+            TargetCamP.y = PlayerP.y + CamBoundingSphereR * sinf(CameraPerspectivePhi) * sinf(CameraPerspectiveTheta);
+            TargetCamP.z = PlayerP.z + CamBoundingSphereR * cosf(CameraPerspectivePhi);
+            
+            CameraLerp(&GlobalCameraP, &TargetCamP);
+        }
+        
+        else
+        {
+            GlobalCameraP.x = PlayerP.x + CamBoundingSphereR * sinf(CameraPerspectivePhi) * cosf(CameraPerspectiveTheta);
+            GlobalCameraP.y = PlayerP.y + CamBoundingSphereR * sinf(CameraPerspectivePhi) * sinf(CameraPerspectiveTheta);
+            GlobalCameraP.z = PlayerP.z + CamBoundingSphereR * cosf(CameraPerspectivePhi);
+        }
+        
+        gluLookAt(GlobalCameraP.x, GlobalCameraP.y, GlobalCameraP.z,
+                  PlayerP.x, PlayerP.y, PlayerP.z + 50.0,
+                  0,0,1);
+    }
 }
 
 void UpdateGame(int Value)

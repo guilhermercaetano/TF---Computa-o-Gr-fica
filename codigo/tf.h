@@ -300,6 +300,18 @@ v2f DistTraveledLastFrame = {};
 float CameraPerspectiveTheta = -4.696;
 float CameraPerspectivePhi = -0.900;
 
-shape Wall1;
+enum camera_type
+{
+    Camera_FirstPersonGun,
+    Camera_FirstPersonEye,
+    Camera_ThirdPerson,
+}; 
+
+camera_type GlobalActiveCamType = Camera_FirstPersonGun;
+bool ToFirstPersonCamTransition = false;
+bool ToThirdPersonCamTransition = false;
+
+v3f GlobalCameraP = {};
+
 
 #endif
