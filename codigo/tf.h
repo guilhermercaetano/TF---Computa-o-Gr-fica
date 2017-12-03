@@ -253,6 +253,13 @@ struct timing
     float FramesPerSecond;
 };
 
+struct light
+{
+    v3f Origin;
+    v3f Direction;
+    bool IsLightOn;
+};
+
 struct camera
 {
     v3f P;
@@ -320,6 +327,5 @@ float CameraPerspectivePhi = -0.900;
 bool ToFirstPersonCamTransition = false;
 bool ToThirdPersonCamTransition = false;
 
-bool FlashLightOn = true;
 
 #endif

@@ -1036,37 +1036,15 @@ void PrintText(GLfloat x, GLfloat y, const char * text, double r, double g, doub
 
 void Display(void)
 {
-    GLfloat LighPosition[] = { 0.0, 0.0, 100.0, 1.0 };
+    GLfloat LighPosition[] = {0.0, 0.0, 100.0, 1.0};
     glLightfv(GL_LIGHT0, GL_POSITION, LighPosition);
     
     v3f PlayerP = Game.Player->Player.Position;
-    bases PlayerBases = Game.Player->Player.Bases;
+    v3f SpotlightDirection = Game.Player->Player.Bases.yAxis;
+    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, 40.0, 1};
     
-    v3f SpotlightDirection;
-#if 0
-    SpotlightDirection.x = 1.0 * PlayerBases.yAxis.x;
-    SpotlightDirection.y = 1.0 * PlayerBases.yAxis.y;
-    SpotlightDirection.z = 1.0 * PlayerBases.yAxis.z;
-#else 
-    SpotlightDirection = Game.Player->Player.Bases.yAxis;
-#endif
-    v3f Pos = V3f(0, 1, 0);
-    v4f Position = v4f{PlayerP.x, PlayerP.y, 1, 1};
-    printf("%.2f %.2f %.2f\n", SpotlightDirection.x, SpotlightDirection.y, SpotlightDirection.z);
-    glLightfv(GL_LIGHT1, GL_POSITION, Position.fv);
+    glLightfv(GL_LIGHT1, GL_POSITION, SpotlightOrigin.fv);
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, SpotlightDirection.fv);
-    
-    if (FlashLightOn)
-    {
-        glEnable(GL_LIGHT0); 
-        glEnable(GL_LIGHT1); 
-    }
-    
-    else
-    {
-        glDisable(GL_LIGHT0); 
-        //glDisable(GL_LIGHT1); 
-    }
     
     DrawGame(Game.Arena);
     //DrawShape(&Wall1, V3f(0, 0, 0), 0);
@@ -1178,9 +1156,28 @@ void ProcessKeyboard(unsigned char Key, int X, int Y)
 {
     Game.Input.Keyboard[Key] = true;
     
-    if (Key == 'g')
+    if (Key == 'n')
     {
-        FlashLightOn = !FlashLightOn;
+        if (glIsEnabled(GL_LIGHT0))
+        {
+            glDisable(GL_LIGHT0);
+        }
+        else
+        {
+            glEnable(GL_LIGHT0);
+        }
+    }
+    
+    if (Key == 'f')
+    {
+        if (glIsEnabled(GL_LIGHT1))
+        {
+            glDisable(GL_LIGHT1);
+        }
+        else
+        {
+            glEnable(GL_LIGHT1);
+        }
     }
 }
 
@@ -1683,7 +1680,7 @@ void CameraUpdate(camera *Camera)
     else if (Camera->Type == Camera_ThirdPerson)
     {
         // NOTA: Câmera em terceira pessoa olhando para o jogador
-        float CamBoundingSphereR = 150.0;
+        float CamBoundingSphereR = 120.0;
         
         if (ToThirdPersonCamTransition)
         {
@@ -1755,7 +1752,7 @@ void Init()
     glShadeModel (GL_SMOOTH);
     
     glEnable(GL_LIGHTING);
-    //glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT0); 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
     
@@ -1764,12 +1761,16 @@ void Init()
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 30.0);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 1);
     
+    
+    float AmbientLight0[] = {0.5, .5, 0.5, 1.0};
+    glLightfv(GL_LIGHT0, GL_AMBIENT, AmbientLight0);
+    
     FloorTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128.bmp");
     BulletTexture.Id = LoadTextureRAW("texture/sun1.bmp");
     FloorNormalTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128_normal.bmp");
     WallTexture.Id = LoadTextureRAW("texture/Stucco_pxr128.bmp");
     
-    StandardMaterial.Emission = {0.4, 0.4, 0.4, 1};
+    StandardMaterial.Emission = {0.1, 0.1, 0.1, 1};
     StandardMaterial.ColorA = {0.4, 0.4, 0.4, 1};
     StandardMaterial.ColorD = {1.0, 1.0, 1.0, 1};
     StandardMaterial.Specular = {0.9, 0.9, 0.9, 1};
