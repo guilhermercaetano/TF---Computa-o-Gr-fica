@@ -1,4 +1,5 @@
 // Guilherme Rodrigues Caetano - 2013100847
+// Marcelo Bringuenti Pedro
 // TF Computação Gráfica
 
 #ifndef _ALGEBRA_

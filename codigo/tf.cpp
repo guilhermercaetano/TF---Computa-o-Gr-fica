@@ -1,4 +1,5 @@
 // Guilherme Rodrigues Caetano - 2013100847
+// Marcelo Bringuenti Pedro
 // TF Computação Gráfica
 
 #include<stdlib.h>
@@ -727,10 +728,16 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             CircleCenter.y = Center.y - SVGC->Radius;
             CenterRadius = SVGC->Radius;
             
-            Game.EntityCount++;
-            Entity++;
-            Center = {SVGC->CenterX, SVGC->CenterY, -20.0f};
-            CreateEntityStatic(Entity, Entity_Wall, Blue, 15, 300.0, SVGC->Radius, Center, true);
+            uint Incr = 5;
+            for (int i = 0; i < 300; i += Incr)
+            {
+                Game.EntityCount++;
+                Entity++;
+                Center = {SVGC->CenterX, SVGC->CenterY, (float)i};
+                CreateEntityStatic(Entity, Entity_Wall, Blue, 15 + (i / 30), Incr, SVGC->Radius, Center, true, 
+                                   false, false, true);
+            }
+            
         }
         
         else if (strncmp(SVGC->Fill, "white", strlen("white")) == 0)
@@ -739,7 +746,7 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.1};
             Game.Arena.CenterLimit = 
                 CreateEntityStatic(Entity, Entity_CenterLimit, White, SVGC->Id, Height, 
-                                   SVGC->Radius, Center, false);
+                                   SVGC->Radius, Center, false, true, true, true);
         }
         
         else if (strncmp(SVGC->Fill, "green", strlen("green")) == 0)
@@ -763,7 +770,7 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             float PlatformHeight = JumpHeight * (float)(Game.ObstaclesHeight / 100.0);
             v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.1};
             CreateEntityStatic(Entity, Entity_ShortObstacle, Black, SVGC->Id,
-                               PlatformHeight, SVGC->Radius, Center, false);
+                               PlatformHeight, SVGC->Radius, Center, false, true, true, true);
         }
         
         else
@@ -1041,7 +1048,7 @@ void Display(void)
     
     v3f PlayerP = Game.Player->Player.Position;
     v3f SpotlightDirection = Game.Player->Player.Bases.yAxis;
-    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, 40.0, 1};
+    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, 70.0, 1};
     
     glLightfv(GL_LIGHT1, GL_POSITION, SpotlightOrigin.fv);
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, SpotlightDirection.fv);
@@ -1058,7 +1065,7 @@ void Display(void)
         }
     }
     
-#if !DEBUG_PLAYER_LINE
+#if DEBUG_PLAYER_LINE
     OpenGLDrawLine(Game.Player->Player.Position, 
                    Game.Player->Player.Position + 100 * Game.Player->Player.Bases.yAxis, 
                    Colors[Red]);
@@ -1756,10 +1763,15 @@ void Init()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
     
+    float SpecularLight[] = {0.5, 0.5, 0.5, 1.0};
+    glLightfv(GL_LIGHT1, GL_SPECULAR, SpecularLight);
+    float DiffuseLight[] = {0.5, 0.5, 0.5, 1.0};
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, DiffuseLight);
     float AmbientLight[] = {1.0, 1.0, 0.4, 1.0};
     glLightfv(GL_LIGHT1, GL_AMBIENT, AmbientLight);
-    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 30.0);
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 15.0);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 1);
+    glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0f);
     
     
     float AmbientLight0[] = {0.5, .5, 0.5, 1.0};
@@ -1770,7 +1782,7 @@ void Init()
     FloorNormalTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128_normal.bmp");
     WallTexture.Id = LoadTextureRAW("texture/Stucco_pxr128.bmp");
     
-    StandardMaterial.Emission = {0.1, 0.1, 0.1, 1};
+    StandardMaterial.Emission = {0.05, 0.05, 0.05, 1};
     StandardMaterial.ColorA = {0.4, 0.4, 0.4, 1};
     StandardMaterial.ColorD = {1.0, 1.0, 1.0, 1};
     StandardMaterial.Specular = {0.9, 0.9, 0.9, 1};
@@ -1813,7 +1825,7 @@ int main(int argc, char **argv)
             glutInit(&argc, argv);
             glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
             glutInitWindowSize(WindowWidth, WindowHeight);
-            glutCreateWindow("TF - Guilherme Caetano");
+            glutCreateWindow("TF - Guilherme Caetano e Marcelo Bringuenti Pedro");
             
             Init();
             glutDisplayFunc(Display);

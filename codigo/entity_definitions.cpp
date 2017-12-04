@@ -45,7 +45,8 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
 
 entity *
 CreateEntityStatic(entity *Entity, entity_type Type, svg_color_names Color, int Id, 
-                   float Height, float Radius, v3f Origin, bool InvSideNormals)
+                   float Height, float Radius, v3f Origin, bool InvSideNormals, 
+                   bool DrawBase, bool DrawTop, bool DrawSide)
 {
     FillEntityHeader(&Entity->Header, Id, 0x0F, Type, Height, Origin);
     
@@ -57,6 +58,10 @@ CreateEntityStatic(entity *Entity, entity_type Type, svg_color_names Color, int 
     Entity->Static.Shape.Cylinder.Radius = Radius;
     Entity->Static.Shape.Cylinder.Height = Height;
     Entity->Static.Shape.Cylinder.InvSideNormals = InvSideNormals;
+    Entity->Static.Shape.Cylinder.DrawBase = DrawBase;
+    Entity->Static.Shape.Cylinder.DrawTop = DrawTop;
+    Entity->Static.Shape.Cylinder.DrawSide = DrawSide;
+    
     Entity->Static.Shape.Transform.Translation = V3f(0, 0, 0);
     
     CalcShapePoints(&Entity->Static.Shape, 0.0);

@@ -1,8 +1,8 @@
 #ifndef SHAPE_DEFINITIONS_H
 #define SHAPE_DEFINITIONS_H
 
-#define MaxCircleVertices 60
-#define SHAPE_VERTICES 60
+#define MaxCircleVertices 300
+#define SHAPE_VERTICES 300
 
 struct material
 {
@@ -60,6 +60,9 @@ struct cylinder
     float Height;
     
     bool InvSideNormals;
+    bool DrawBase;
+    bool DrawTop;
+    bool DrawSide;
     
     vertex BaseVertices[MaxCircleVertices];
     vertex TopVertices[MaxCircleVertices];
