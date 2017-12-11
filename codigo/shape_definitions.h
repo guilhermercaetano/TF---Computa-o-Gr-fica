@@ -1,8 +1,9 @@
 #ifndef SHAPE_DEFINITIONS_H
 #define SHAPE_DEFINITIONS_H
 
-#define MaxCircleVertices 300
-#define SHAPE_VERTICES 300
+#define MaxCircleVertices 600
+#define SHAPE_VERTICES 600
+#define MaxRectangleVertices 1600
 
 struct material
 {
@@ -30,6 +31,7 @@ typedef enum shape_type
     Shape_Sphere,
     Shape_Box,
     Shape_Cylinder,
+    Shape_SubdividedRectangle,
 } shape_type;
 
 struct vertex
@@ -60,6 +62,9 @@ struct cylinder
     float Height;
     
     bool InvSideNormals;
+    bool InvTopNormals;
+    bool InvBaseNormals;
+    
     bool DrawBase;
     bool DrawTop;
     bool DrawSide;
@@ -88,6 +93,8 @@ typedef struct rectangle
 {
     float Width;
     float Height;
+    vertex Vertices[MaxRectangleVertices];
+    
     v3f Points[4];
 } rectangle;
 

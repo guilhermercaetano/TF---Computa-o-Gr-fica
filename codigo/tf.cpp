@@ -5,6 +5,7 @@
 #include<stdlib.h>
 #include<time.h>
 #include<math.h>
+#include<glew.h>
 #include<GL/glut.h>
 #include<GL/glu.h>
 #include<GL/gl.h>
@@ -220,7 +221,8 @@ void MoveEntity(entity *Entity, game_dynamics *Dynamics, v3f Velocity, shape Sha
                     case Entity_CenterLimit:
                     case Entity_Player:
                     {
-                        v3f d = Entity->Header.Origin + NewdeltaP - Entities->Content->Header.Origin;
+                        float Offset = 20.0;
+                        v3f d = Entity->Header.Origin + Offset + NewdeltaP - Entities->Content->Header.Origin;
                         float dCenter = VectorSize(d);
                         v3f Normal = d / dCenter;
                         Velocity = Velocity - 1 * DotProduct(Velocity, Normal) * Normal;
@@ -233,14 +235,15 @@ void MoveEntity(entity *Entity, game_dynamics *Dynamics, v3f Velocity, shape Sha
                     {
                         if (Entity->Header.Origin.z <= Entities->Content->Header.Height)
                         {
-                            v3f d = Entity->Header.Origin + NewdeltaP - Entities->Content->Header.Origin;
+                            float Offset = 20.0;
+                            v3f OffsetFromObstacle = Offset + NewdeltaP;
+                            v3f d = Entity->Header.Origin + Offset + NewdeltaP - Entities->Content->Header.Origin;
                             float dCenter = VectorSize(d);
                             v3f Normal = d / dCenter;
                             Velocity = Velocity - 1 * DotProduct(Velocity, Normal) * Normal;
                             NewdeltaP += 0.05f * Velocity * Game.Timing.deltaTime + Normal;
                             Dynamics->Collision = true;
                             
-#if 1
                             if (!Entity->Enemy.Jumping && Entity->Enemy.Velocity.z == 0.0f) 
                             {
                                 Entity->Enemy.Dynamics.Ascending = true;
@@ -252,13 +255,13 @@ void MoveEntity(entity *Entity, game_dynamics *Dynamics, v3f Velocity, shape Sha
                                     GRAVITY_ACCELERATION * GravityAccelerationScale * JumpHeight;
                                 Entity->Enemy.Velocity.z = sqrt(2 * GH);
                             }
-#endif
                         }
                     } break;
                     
                     case Entity_Background:
                     {
-                        v3f d = Entities->Content->Background.Origin - NewRelP - Entity->Header.Origin;
+                        float Offset = 20.0;
+                        v3f d = Entities->Content->Background.Origin + (-Offset) - NewRelP - Entity->Header.Origin;
                         d.z = 0;
                         float dCenter = VectorSize(d) + Shape.Circle.Radius;
                         if (dCenter >= Entities->Content->Background.Shape.Circle.Radius)
@@ -581,9 +584,13 @@ void UpdateAndDrawEntity(entity *Entity)
                         Entity->Header.State &= ~EntityState_Visible;
                         Entity->Header.State &= ~EntityState_Active;
                         
-                        EntityEntry->Content->Header.State &= ~EntityState_Visible;
-                        EntityEntry->Content->Header.State &= ~EntityState_Active;
+                        if (Entity->Bullet.CastingEntityType != Entity_Player)
+                        {
+                            EntityEntry->Content->Header.State &= ~EntityState_Visible;
+                            EntityEntry->Content->Header.State &= ~EntityState_Active;
+                        }
                     }
+                    
                 }
                 
                 delete Entities;
@@ -701,6 +708,11 @@ void UpdateAndDrawEntity(entity *Entity)
             DrawShape(&Entity->Static.Shape, Entity->Static.Origin, 0);
         } break;
         
+        case Entity_Background:
+        {
+            DrawShape(&Entity->Static.Shape, Entity->Static.Origin, 0);
+        } break;
+        
         default: {ASSERT(false);}
     }
 }
@@ -722,31 +734,61 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
         {
             v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.0f};
             Game.Arena.Background = 
-                CreateBackgroundEntity(Entity, SVGC->Id, 0.0, SVGC->Radius, Center, Blue);
+                CreateBackground(Entity, SVGC->Id, 0.0, SVGC->Radius, Center, Blue);
+            
+            uint PixelsTall = 300;
             
             CircleCenter.x = Center.x - SVGC->Radius;
             CircleCenter.y = Center.y - SVGC->Radius;
             CenterRadius = SVGC->Radius;
             
-            uint Incr = 5;
-            for (int i = 0; i < 300; i += Incr)
+            uint Incr = 40;
+            for (uint i = 0; i < PixelsTall; i += Incr)
             {
                 Game.EntityCount++;
                 Entity++;
                 Center = {SVGC->CenterX, SVGC->CenterY, (float)i};
-                CreateEntityStatic(Entity, Entity_Wall, Blue, 15 + (i / 30), Incr, SVGC->Radius, Center, true, 
-                                   false, false, true);
+                cylinder Cylinder = {};
+                Cylinder.Radius = SVGC->Radius;
+                Cylinder.Height = Incr;
+                Cylinder.InvSideNormals = true;
+                Cylinder.DrawBase = false;
+                Cylinder.DrawTop = false;
+                Cylinder.DrawSide = true;
+                
+                uint BaseId = SVGC->Id + 200;
+                uint Id = BaseId + (i / 30);
+                
+                CreateExternalWall(Entity, Id, Center, Cylinder);
             }
-            
         }
         
         else if (strncmp(SVGC->Fill, "white", strlen("white")) == 0)
         {
-            float Height = 200.0;
-            v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.1};
-            Game.Arena.CenterLimit = 
-                CreateEntityStatic(Entity, Entity_CenterLimit, White, SVGC->Id, Height, 
-                                   SVGC->Radius, Center, false, true, true, true);
+            float PixelsTall = 200.0;
+            v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.0};
+            
+            uint Incr = 40;
+            for (int i = 0; i < PixelsTall; i += Incr)
+            {
+                
+                Center = {SVGC->CenterX, SVGC->CenterY, (float)i};
+                cylinder Cylinder = {};
+                Cylinder.Radius = SVGC->Radius;
+                Cylinder.Height = Incr;
+                Cylinder.InvSideNormals = false;
+                Cylinder.DrawBase = false;
+                Cylinder.DrawTop = false;
+                Cylinder.DrawSide = true;
+                
+                uint BaseId = SVGC->Id + 300;
+                uint Id = BaseId + (i / 30);
+                
+                CreateInternalWall(Entity, Id, Center, Cylinder);
+                Game.EntityCount++;
+                Entity++;
+            }
+            
         }
         
         else if (strncmp(SVGC->Fill, "green", strlen("green")) == 0)
@@ -955,7 +997,7 @@ inline v3f GetCanonicalCoordinates(float X, float Y, float Z)
 inline void DrawGame(arena Arena)
 {
     DrawShape(&Arena.Background->Shape, Arena.Background->Shape.Origin, &FloorTexture);
-    UpdateAndDrawEntity(Arena.CenterLimit);
+    //UpdateAndDrawEntity(Arena.CenterLimit);
     
     uint Count = Game.EntityCount;
     for (entity *Entity = Game.Entities; Count--; Entity++)
@@ -971,6 +1013,11 @@ inline void DrawGame(arena Arena)
         }
         
         if (Entity->Header.Type == Entity_Wall)
+        {
+            UpdateAndDrawEntity(Entity);
+        }
+        
+        if (Entity->Header.Type == Entity_CenterLimit)
         {
             UpdateAndDrawEntity(Entity);
         }
@@ -1043,7 +1090,7 @@ void PrintText(GLfloat x, GLfloat y, const char * text, double r, double g, doub
 
 void Display(void)
 {
-    GLfloat LighPosition[] = {0.0, 0.0, 100.0, 1.0};
+    GLfloat LighPosition[] = {500.0, 500.0, 500.0, 1.0};
     glLightfv(GL_LIGHT0, GL_POSITION, LighPosition);
     
     v3f PlayerP = Game.Player->Player.Position;
@@ -1054,7 +1101,7 @@ void Display(void)
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, SpotlightDirection.fv);
     
     DrawGame(Game.Arena);
-    //DrawShape(&Wall1, V3f(0, 0, 0), 0);
+    
     UpdateAndDrawEntity(Game.Player);
     
     for (int i = 0; i < GlobalBulletsCount; i++)
@@ -1245,15 +1292,6 @@ void PlayerJump(entity_player *Player)
 
 void MovePlayer(entity_player *Player)
 {
-#if 0
-    float AccelerationLength = VectorSize(Player->Acceleration);
-    if (AccelerationLength > AccelMagnitude)
-    {
-        Player->Acceleration *= (AccelMagnitude / AccelerationLength);
-    }
-    
-    Player->Velocity = (Player->Acceleration * deltaTime) + Player->Velocity;
-#endif
     
     v3f NewRelPos = {}; 
     NewRelPos.x = Player->Velocity.x * Game.Timing.deltaTime;
@@ -1276,11 +1314,12 @@ void MovePlayer(entity_player *Player)
                 {
                     if (Entity->Header.State & EntityState_Active)
                     {
+                        float ToWallDist = 20.0;
                         v3f d = Player->Position + NewdeltaPos - Entity->Enemy.Position;
                         d.z = 0;
                         float dCenter = VectorSize(d);
                         sphere Sphere = Player->Body.Head.Sphere; 
-                        float dRadius = Sphere.Radius + Entity->Enemy.Body.Head.Sphere.Radius;
+                        float dRadius = Sphere.Radius + ToWallDist + Entity->Enemy.Body.Head.Sphere.Radius;
                         
                         if (dCenter <= dRadius)
                         {
@@ -1299,11 +1338,12 @@ void MovePlayer(entity_player *Player)
                         !Player->Dynamics.PlatformAllow &&
                         Player->Position.z <= Entity->Header.Height)
                     {
+                        float ToWallDist = 1.0;
                         v3f d = Player->Position + NewdeltaPos - Entity->Static.Origin;
                         d.z = 0;
                         float dCenter = VectorSize(d);
                         sphere Sphere = Player->Body.Head.Sphere; 
-                        float dRadius = Sphere.Radius + Entity->Static.Shape.Circle.Radius;
+                        float dRadius = Sphere.Radius + ToWallDist + Entity->Static.Shape.Circle.Radius;
                         
                         if (dCenter <= dRadius)
                         {
@@ -1320,12 +1360,12 @@ void MovePlayer(entity_player *Player)
                 {
                     if (Entity->Header.State & EntityState_Active)
                     {
-                        float ToWallDist = 6.0;
-                        v3f d = Player->Position + ToWallDist * NewdeltaPos - Entity->Static.Origin;
+                        float ToWallDist = 10.0;
+                        v3f d = Player->Position + NewdeltaPos - Entity->Static.Origin;
                         d.z = 0;
                         float dCenter = VectorSize(d);
                         sphere Sphere = Player->Body.Head.Sphere; 
-                        float dRadius = Sphere.Radius + Entity->Static.Shape.Circle.Radius;
+                        float dRadius = Sphere.Radius + ToWallDist + Entity->Static.Shape.Circle.Radius;
                         
                         if (dCenter <= dRadius)
                         {
@@ -1340,17 +1380,18 @@ void MovePlayer(entity_player *Player)
                 
                 case Entity_Background:
                 {
-                    float ToWallDist = 6.0;
-                    v3f d = Entity->Background.Origin - ToWallDist * NewRelPos - Player->Position;
+                    float ToWallDist = 10.0;
+                    v3f d = Entity->Background.Origin - NewRelPos - Player->Position;
                     d.z = 0;
                     float dCenter = VectorSize(d) + Player->Body.Head.Sphere.Radius;
+                    printf("origin: %.3f\n", dCenter);
                     
-                    if (dCenter >= Entity->Background.Shape.Circle.Radius)
+                    if (dCenter + ToWallDist >= (Entity->Background.Shape.Rectangle.Width/2))
                     {
                         v3f Normal = Normalize(d);
                         float Dot = DotProduct(Player->Velocity, Normal);
                         Player->Velocity = Player->Velocity - 1 * Dot * Normal;
-                        NewdeltaPos += 0.05f * Player->Velocity * Game.Timing.deltaTime + 0.5 * Normal;
+                        NewdeltaPos += 0.05f * Player->Velocity * Game.Timing.deltaTime + 1 * Normal;
                         
                         Player->Dynamics.Collision = true;
                     }
@@ -1540,7 +1581,7 @@ inline void ProcessInput(input Input, entity_player *Player)
 
 inline bool CameraLerp(v3f *Source, v3f *Dest)
 {
-    v3f CamTransitionVelocity = {6.0, 6.0, 1.5};
+    v3f CamTransitionVelocity = {3.0, 3.0, 1.5};
     
     if (Source->x < 0.9*Dest->x)
     {
@@ -1716,7 +1757,12 @@ void UpdateGame(int Value)
 {
     ASSERT(Game.Player);
     ProcessInput(Game.Input, &Game.Player->Player);
-    MovePlayer(&Game.Player->Player);
+    
+    if (Game.Player->Header.State & EntityState_Active)
+    {
+        MovePlayer(&Game.Player->Player);
+    }
+    
     if (Game.Player->Player.Jumping)
     {
         PlayerJump(&Game.Player->Player);
@@ -1740,12 +1786,12 @@ void Reshape(int Width, int Height)
     
     if (Width <= Height)
     {
-        gluPerspective(60, (float)Height/(float)Width, 1, 2000);
+        gluPerspective(75, (float)Height/(float)Width, 1, 2000);
     }
     
     else
     {
-        gluPerspective(60, (float)Width/(float)Height, 1, 2000);
+        gluPerspective(75, (float)Width/(float)Height, 1, 2000);
     }
     
     glMatrixMode(GL_MODELVIEW);
@@ -1756,7 +1802,7 @@ void Init()
     float Size = 1.0f;
     
     glClearColor(1, 1, 1, 0);
-    glShadeModel (GL_SMOOTH);
+    glShadeModel(GL_SMOOTH);
     
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0); 
@@ -1769,8 +1815,8 @@ void Init()
     glLightfv(GL_LIGHT1, GL_DIFFUSE, DiffuseLight);
     float AmbientLight[] = {1.0, 1.0, 0.4, 1.0};
     glLightfv(GL_LIGHT1, GL_AMBIENT, AmbientLight);
-    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 15.0);
-    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 1);
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 20.0);
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 10);
     glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0f);
     
     
@@ -1780,7 +1826,7 @@ void Init()
     FloorTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128.bmp");
     BulletTexture.Id = LoadTextureRAW("texture/sun1.bmp");
     FloorNormalTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128_normal.bmp");
-    WallTexture.Id = LoadTextureRAW("texture/Stucco_pxr128.bmp");
+    WallTexture.Id = LoadTextureRAW("texture/Stucco_pxr128_2.bmp");
     
     StandardMaterial.Emission = {0.05, 0.05, 0.05, 1};
     StandardMaterial.ColorA = {0.4, 0.4, 0.4, 1};
@@ -1812,8 +1858,14 @@ int main(int argc, char **argv)
         Game.Timing.deltaTimeMs = 1000.0/Game.FramesPerSecond;
         Game.Timing.deltaTime = Game.Timing.deltaTimeMs / 1000;
         
+        //glUseProgram();
+        
         if (Config.LoadFile()) 
         {
+            // TODO: Shaders!!
+            //glUseProgram();
+            //glCreateShader();
+            
             // TODO: Criar um modelo de armazenamento de entidades que tem pouco tempo de vida.
             GlobalBulletsCount = 100;
             GlobalBullets = (entity *)malloc(sizeof(entity) * GlobalBulletsCount);

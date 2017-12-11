@@ -1,5 +1,50 @@
 #include "shape_definitions.h"
 
+void 
+CalcSubdividedRectVertices(rectangle *Rectangle, float Height, 
+                           float SubdivisionIntervalX, float SubdivisionIntervalY)
+{
+    uint VertexId = 0;
+    
+    for (float CurrentWidth = 0;
+         CurrentWidth < Rectangle->Width;
+         CurrentWidth += SubdivisionIntervalX)
+    {
+        
+        for (uint CurrentHeight = 0; 
+             CurrentHeight < Rectangle->Height; 
+             CurrentHeight += SubdivisionIntervalY)
+        {
+            Rectangle->Vertices[VertexId].Coordinate.x = (-Rectangle->Width/2) + CurrentWidth;
+            Rectangle->Vertices[VertexId].Coordinate.y = (-Rectangle->Height/2) + CurrentHeight;
+            Rectangle->Vertices[VertexId].Coordinate.z = Height;
+            
+            Rectangle->Vertices[VertexId].UVCoordinate.x = Rectangle->Vertices[VertexId].Coordinate.x / (Rectangle->Width/2);
+            Rectangle->Vertices[VertexId].UVCoordinate.y = Rectangle->Vertices[VertexId].Coordinate.y / (Rectangle->Height/2);
+            
+            Rectangle->Vertices[VertexId].Normal.x = 0;
+            Rectangle->Vertices[VertexId].Normal.y = 0;
+            Rectangle->Vertices[VertexId].Normal.z = 1;
+            
+            VertexId++;
+            
+            Rectangle->Vertices[VertexId].Coordinate.x = (-Rectangle->Width/2) + CurrentWidth + SubdivisionIntervalX;
+            Rectangle->Vertices[VertexId].Coordinate.y = (-Rectangle->Height/2) + CurrentHeight;
+            Rectangle->Vertices[VertexId].Coordinate.z = Height;
+            
+            Rectangle->Vertices[VertexId].UVCoordinate.x = Rectangle->Vertices[VertexId].Coordinate.x / (Rectangle->Width/2);
+            Rectangle->Vertices[VertexId].UVCoordinate.y = Rectangle->Vertices[VertexId].Coordinate.y / (Rectangle->Height/2);
+            
+            Rectangle->Vertices[VertexId].Normal.x = 0;
+            Rectangle->Vertices[VertexId].Normal.y = 0;
+            Rectangle->Vertices[VertexId].Normal.z = 1;
+            
+            VertexId++;
+        }
+    }
+}
+
+
 void CalcRectVertices(rectangle *Rectangle, float Height)
 {
     Rectangle->Points[0].x = -Rectangle->Width/2;
@@ -213,9 +258,12 @@ void CalcCylinderPoints(cylinder *Cylinder, float Height)
 {
     float Phi = 0.0f;
     
+    // NOTA: Calculando pontos para a base inferior do cilindro
     if (1)
     {
-        // NOTA: Calculando pontos para a base inferior do cilindro
+        int Inv = 1;
+        if (Cylinder->InvBaseNormals) Inv = -1;
+        
         for (int i = 0; i < MaxCircleVertices; i++)
         {
             float CosPhi = cosf(Phi);
@@ -227,7 +275,7 @@ void CalcCylinderPoints(cylinder *Cylinder, float Height)
             Cylinder->BaseVertices[i].Coordinate.y = NewYPosition;
             Cylinder->BaseVertices[i].Coordinate.z = 0.0;
             
-            Cylinder->BaseVertices[i].Normal = V3f(0, 0, 1);
+            Cylinder->BaseVertices[i].Normal = Inv * V3f(0, 0, 1);
             
             Cylinder->BaseVertices[i].UVCoordinate.x = CosPhi;
             Cylinder->BaseVertices[i].UVCoordinate.y = SinPhi;
@@ -236,9 +284,12 @@ void CalcCylinderPoints(cylinder *Cylinder, float Height)
         }
     }
     
+    // NOTA: Calculando pontos para a base superior do cilindro
     if (1)
     {
-        // NOTA: Calculando pontos para a base superior do cilindro
+        int Inv = 1;
+        if (Cylinder->InvTopNormals) Inv = -1;
+        
         Phi = 0.0f;
         for (int i = 0; i < MaxCircleVertices; i++)
         {
@@ -251,7 +302,7 @@ void CalcCylinderPoints(cylinder *Cylinder, float Height)
             Cylinder->TopVertices[i].Coordinate.y = NewYPosition;
             Cylinder->TopVertices[i].Coordinate.z = Cylinder->Height;
             
-            Cylinder->TopVertices[i].Normal = V3f(0, 0, -1);
+            Cylinder->TopVertices[i].Normal = Inv * V3f(0, 0, -1);
             
             Cylinder->TopVertices[i].UVCoordinate.x = CosPhi;
             Cylinder->TopVertices[i].UVCoordinate.y = SinPhi;

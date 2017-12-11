@@ -156,9 +156,34 @@ void OpenGLDrawBox(box * Box, v3f Center)
     glEnd();
 }
 
+void OpenGLDrawSubdividedRect(rectangle *Rectangle, v3f Center)
+{
+    uint MaxXRegions = 100;
+    for (int j = 0; j < MaxXRegions; j++)
+    {
+        glBegin(GL_TRIANGLE_STRIP);
+        {
+            for (int i = 0; i < MaxXRegions; i++)
+            {
+                glNormal3f(Rectangle->Vertices[MaxXRegions*j+i].Normal.x, 
+                           Rectangle->Vertices[MaxXRegions*j+i].Normal.y, 
+                           Rectangle->Vertices[MaxXRegions*j+i].Normal.z);
+                
+                glTexCoord2f(Rectangle->Vertices[MaxXRegions*j+i].UVCoordinate.x, 
+                             Rectangle->Vertices[MaxXRegions*j+i].UVCoordinate.y);
+                
+                glVertex3f(Rectangle->Vertices[MaxXRegions*j+i].Coordinate.x + Center.x, 
+                           Rectangle->Vertices[MaxXRegions*j+i].Coordinate.y + Center.y, 
+                           Rectangle->Vertices[MaxXRegions*j+i].Coordinate.z + Center.z);
+            }
+        }
+        glEnd();
+    }
+}
+
 void OpenGLDrawRect(rectangle *Rectangle, v3f Center)
 {
-    glBegin(GL_QUADS);
+    glBegin(GL_TRIANGLE_FAN);
     {
         for (int i = 0; i < 4; i++)
         {
@@ -280,6 +305,12 @@ void DrawShape(shape *Shape, v3f Position, texture *Texture)
             case Shape_Box:
             {
                 OpenGLDrawBox(&Shape->Box, Position);
+            } break;
+            
+            case Shape_SubdividedRectangle:
+            {
+                glColor3f(1.0, 1.0, 0.5);
+                OpenGLDrawSubdividedRect(&Shape->Rectangle, Position);
             } break;
             
             default:{ASSERT(0);};

@@ -43,6 +43,38 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
     return &Entity->Bullet;
 }
 
+inline entity *
+CreateInternalWall(entity *Entity, uint Id, v3f Origin, cylinder Cylinder)
+{
+    FillEntityHeader(&Entity->Header, Id, 0x0F, Entity_CenterLimit, Cylinder.Height, Origin);
+    Entity->Static.Header = &Entity->Header;
+    Entity->Static.Origin = Origin;
+    Entity->Static.Shape.ColorFill = White;
+    
+    Entity->Static.Shape.Type = Shape_Cylinder;
+    Entity->Static.Shape.Cylinder = Cylinder;
+    Entity->Static.Shape.Transform.Translation = V3f(0, 0, 0);
+    
+    CalcShapePoints(&Entity->Static.Shape, 0.0);
+    return Entity;
+}
+
+inline entity *
+CreateExternalWall(entity *Entity, uint Id, v3f Origin, cylinder Cylinder)
+{
+    FillEntityHeader(&Entity->Header, Id, 0x0F, Entity_Wall, Cylinder.Height, Origin);
+    Entity->Static.Header = &Entity->Header;
+    Entity->Static.Origin = Origin;
+    Entity->Static.Shape.ColorFill = Blue;
+    
+    Entity->Static.Shape.Type = Shape_Cylinder;
+    Entity->Static.Shape.Cylinder = Cylinder;
+    Entity->Static.Shape.Transform.Translation = V3f(0, 0, 0);
+    
+    CalcShapePoints(&Entity->Static.Shape, 0.0);
+    return Entity;
+}
+
 entity *
 CreateEntityStatic(entity *Entity, entity_type Type, svg_color_names Color, int Id, 
                    float Height, float Radius, v3f Origin, bool InvSideNormals, 
@@ -227,8 +259,8 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
 }
 
 entity_background *
-CreateBackgroundEntity(entity *Entity, int Id, float Height, float Radius, v3f Origin, 
-                       svg_color_names Color)
+CreateBackground(entity *Entity, int Id, float Height, float Radius, v3f Origin, 
+                 svg_color_names Color)
 {
     Entity->Header.Id = Id;
     Entity->Header.Type = Entity_Background;
@@ -237,21 +269,15 @@ CreateBackgroundEntity(entity *Entity, int Id, float Height, float Radius, v3f O
     
     Entity->Background.Header = &Entity->Header;
     Entity->Background.Origin = Origin;
-    Entity->Background.Shape.ColorFill = Color;
+    Entity->Background.Shape.ColorFill  = Color;
     Entity->Background.Shape.Origin = Origin;
-    Entity->Background.Shape.Bases = 
-    {
-        v3f{1.0f, 0.0f, 0.0f},
-        v3f{0.0f, 1.0f, 0.0f}, 
-        v3f{0.0f, 1.0f, 1.0f}
-    };
-    Entity->Background.Shape.Type = Shape_Circle;
-    Entity->Background.Shape.Circle.Radius = Radius;
     
-    CalcShapePoints(&Entity->Background.Shape, Height);
+    Entity->Background.Shape.Type = Shape_SubdividedRectangle;
+    Entity->Background.Shape.Rectangle.Width = 2 * Radius;
+    Entity->Background.Shape.Rectangle.Height = 2 * Radius;
+    
+    CalcSubdividedRectVertices(&Entity->Background.Shape.Rectangle, Height, 
+                               20.0, 20.0);
     
     return &Entity->Background;
 }
-
-// TODO: Implementar parede
-//entity_wall * CreateWall(){}

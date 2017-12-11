@@ -15,7 +15,7 @@ typedef struct transform
 #define STRCMP(STR, LSTR) strncmp(STR, LSTR, strlen(LSTR))
 #define PI 3.14159265359
 
-#define MAX_ENTITIES 100
+#define MAX_ENTITIES 300
 #define GRAVITY_ACCELERATION 9.8
 #define GravityAccelerationScale 12.0
 #define AccelMagnitude 500.0
