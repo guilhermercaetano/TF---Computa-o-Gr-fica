@@ -158,8 +158,9 @@ void OpenGLDrawBox(box * Box, v3f Center)
 
 void OpenGLDrawSubdividedRect(rectangle *Rectangle, v3f Center)
 {
-    uint MaxXRegions = 100;
-    for (int j = 0; j < MaxXRegions; j++)
+    uint MaxYRegions = Rectangle->Height / 10.0;
+    uint MaxXRegions = Rectangle->Width / 10.0;
+    for (int j = 0; j < MaxYRegions; j++)
     {
         glBegin(GL_TRIANGLE_STRIP);
         {
@@ -309,7 +310,6 @@ void DrawShape(shape *Shape, v3f Position, texture *Texture)
             
             case Shape_SubdividedRectangle:
             {
-                glColor3f(1.0, 1.0, 0.5);
                 OpenGLDrawSubdividedRect(&Shape->Rectangle, Position);
             } break;
             

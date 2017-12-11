@@ -273,8 +273,15 @@ CreateBackground(entity *Entity, int Id, float Height, float Radius, v3f Origin,
     Entity->Background.Shape.Origin = Origin;
     
     Entity->Background.Shape.Type = Shape_SubdividedRectangle;
-    Entity->Background.Shape.Rectangle.Width = 2 * Radius;
-    Entity->Background.Shape.Rectangle.Height = 2 * Radius;
+    // HACK: Sem essa constante, o cenário nâo preenche corretamente, pois ele
+    // encobre 1 a menos o número necessário de grupo de pontos para o chão
+    uint MagicConstant = 20;
+    uint ChunkSizeX = 20;
+    uint ChunkSizeY = 20;
+    Entity->Background.Shape.Rectangle.Width = 2 * (Radius+MagicConstant);
+    Entity->Background.Shape.Rectangle.Height = 2 * (Radius+MagicConstant);
+    Entity->Background.Shape.Rectangle.ChunkSizeX = ChunkSizeX;
+    Entity->Background.Shape.Rectangle.ChunkSizeY = ChunkSizeY;
     
     CalcSubdividedRectVertices(&Entity->Background.Shape.Rectangle, Height, 
                                20.0, 20.0);

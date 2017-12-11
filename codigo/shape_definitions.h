@@ -3,7 +3,7 @@
 
 #define MaxCircleVertices 600
 #define SHAPE_VERTICES 600
-#define MaxRectangleVertices 1600
+#define MaxRectangleVertices 2000
 
 struct material
 {
@@ -93,6 +93,8 @@ typedef struct rectangle
 {
     float Width;
     float Height;
+    float ChunkSizeX;
+    float ChunkSizeY;
     vertex Vertices[MaxRectangleVertices];
     
     v3f Points[4];
