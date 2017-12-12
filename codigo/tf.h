@@ -299,6 +299,7 @@ float HeightWhenPressedJumpButton = 0.0;
 
 uint WindowWidth = 600;
 uint WindowHeight = 600;
+uint EyeVisionHeight = 200;
 game Game = {};
 
 uint GlobalBulletsCount;
