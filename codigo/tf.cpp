@@ -1955,8 +1955,6 @@ int main(int argc, char **argv)
         Game.Timing.deltaTimeMs = 1000.0/Game.FramesPerSecond;
         Game.Timing.deltaTime = Game.Timing.deltaTimeMs / 1000;
         
-        //glUseProgram();
-        
         if (Config.LoadFile()) 
         {
             // TODO: Criar um modelo de armazenamento de entidades que tem pouco tempo de vida.
@@ -1982,15 +1980,20 @@ int main(int argc, char **argv)
             glutMotionFunc(ProcessMotion);
             glutTimerFunc(Game.Timing.deltaTimeMs, UpdateGame, 0);
             
+            glewInit();
             
-            // NOTA: Vertex Array Object
-            //GLuint VertexArrayID;
-            //glGenVertexArrays(1, &VertexArrayID);
-            //glBindVertexArray(VertexArrayID);
-            //glBufferData(GL_ARRAY_BUFFER, sizeof(g_vertex_buffer_data), g_vertex_buffer_data, GL_STATIC_DRAW);
+            float VertexData[] = {-1.0, -1.0, 1.0, 
+                1.0, -1.0, 1.0,
+                0.0, 1.0, 1.0};
+            
+            //NOTA: Vertex Array Object
+            uint VertexArrayID;
+            glGenVertexArrays(1, &VertexArrayID);
+            glBindVertexArray(VertexArrayID);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(VertexData), VertexData, GL_STATIC_DRAW);
             
             // TODO: Shaders!!
-            uint ProgramId = LoadShaders("vertex_shader.glsl", "fragment_shader.glsl" );
+            uint ProgramId = LoadShaders("codigo/vertex_shader.glsl", "codigo/fragment_shader.glsl");
             //glUseProgram(ProgramId);
             //glCreateShader();
             
