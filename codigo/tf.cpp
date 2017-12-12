@@ -1808,6 +1808,9 @@ void Init()
     glClearColor(1, 1, 1, 0);
     glShadeModel(GL_SMOOTH);
     
+    // Precisa mesmo disso??
+    glEnable(GLUT_MULTISAMPLE);
+    
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0); 
     glEnable(GL_DEPTH_TEST);
@@ -1822,7 +1825,6 @@ void Init()
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 20.0);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 10);
     glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.0f);
-    
     
     float AmbientLight0[] = {0.5, .5, 0.5, 1.0};
     glLightfv(GL_LIGHT0, GL_AMBIENT, AmbientLight0);
@@ -1848,6 +1850,7 @@ void Init()
     Game.Camera.Type = Camera_FirstPersonGun;
     memset(Game.Input.Mouse.ButtonState, -1, 3);
 }
+
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path){
     
     // Create the shaders
@@ -1966,7 +1969,7 @@ int main(int argc, char **argv)
             TinyXMLParseConfigFile(Config);
             
             glutInit(&argc, argv);
-            glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
+            glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH | GLUT_MULTISAMPLE);
             glutInitWindowSize(WindowWidth, WindowHeight);
             glutCreateWindow("TF - Guilherme Caetano e Marcelo Bringuenti Pedro");
             
