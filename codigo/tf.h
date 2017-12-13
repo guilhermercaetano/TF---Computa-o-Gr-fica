@@ -297,8 +297,8 @@ typedef struct game
 float JumpHeight = 40.0f;
 float HeightWhenPressedJumpButton = 0.0;
 
-uint WindowWidth = 600;
-uint WindowHeight = 600;
+uint WindowWidth = 500;
+uint WindowHeight = 500;
 uint EyeVisionHeight = 200;
 game Game = {};
 
@@ -328,5 +328,6 @@ float CameraPerspectivePhi = -0.900;
 bool ToFirstPersonCamTransition = false;
 bool ToThirdPersonCamTransition = false;
 
+uint ProgramId;
 
 #endif

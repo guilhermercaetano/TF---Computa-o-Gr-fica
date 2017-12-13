@@ -1136,46 +1136,8 @@ inline bool CameraLerp(v3f *Source, v3f *Dest)
 
 void CameraUpdate(camera *Camera)
 {
-    
-    // NOTA: Código relativo ao tratamento da câmera em coordenadas cilindricas
-    float RelativeDistXTraveled = DistTraveledLastFrame.x / WindowWidth;
-    float RelativeDistYTraveled = DistTraveledLastFrame.y / WindowHeight;
-    float NewCameraPhi = CameraPerspectivePhi + PI * Camera->Sensitivity * RelativeDistYTraveled;
-    float NewCameraTheta = CameraPerspectiveTheta + PI * Camera->Sensitivity * RelativeDistXTraveled;
-    float PlayerAngle = Game.Player->Player.Transform.Rotation.z;
-    
-    if (CameraPerspMoved)
-    {
-        if ((NewCameraPhi > -PI/2) && 
-            (NewCameraPhi < 0) && 
-            (NewCameraTheta - PlayerAngle < -PI) && 
-            (NewCameraTheta - PlayerAngle > -2 * PI))
-        {
-            CameraPerspectiveTheta += PI * Camera->Sensitivity * RelativeDistXTraveled;
-            CameraPerspectivePhi += PI * Camera->Sensitivity * RelativeDistYTraveled;
-        }
-        
-        GlobalLastXCoordinate = Game.Input.Mouse.Position.x;
-        GlobalLastYCoordinate = Game.Input.Mouse.Position.y;
-        
-        CameraPerspMoved = false;
-    }
-    
-    float CameraMotionVelocity = 0.8;
-    
-    if ((NewCameraTheta - PlayerAngle) >= -PI)
-    {
-        
-        CameraPerspectiveTheta -= CameraMotionVelocity * Game.Timing.deltaTime;
-    }
-    
-    else if (NewCameraTheta - PlayerAngle <= -2 * PI)
-    {
-        CameraPerspectiveTheta += CameraMotionVelocity * Game.Timing.deltaTime;
-    }
-    
     glClearColor(0.0, 0.0, 0.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
     
     ASSERT(Game.Player);
@@ -1205,7 +1167,7 @@ void CameraUpdate(camera *Camera)
         v3f PointingGun;
         PointingGun.x = 0;
         PointingGun.y = PlayerP.y + 0.5 * (Game.Input.Mouse.Position.x-WindowWidth/2);
-        PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight/2;
+        PointingGun.z = Game.Input.Mouse.Position.y+EyeVisionHeight-WindowHeight/2;
         
         // TODO: Corrigir a altura da arma
         float GunHeight = 70.0;
@@ -1213,27 +1175,26 @@ void CameraUpdate(camera *Camera)
         float CamHorizonDist = 100.0;
         float FirstPersonCamOffset = 20.0;
         
+        v3f FirstPersonCamFinalPoint;
+        FirstPersonCamFinalPoint.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
+        FirstPersonCamFinalPoint.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
+        FirstPersonCamFinalPoint.z = GunHeight+PlayerP.z;
+        
         // TODO: Transicao na mudanca de cameras
         if (ToFirstPersonCamTransition)
         {
-            v3f TargetCamPoint;
-            TargetCamPoint.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
-            TargetCamPoint.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
-            TargetCamPoint.z = GunHeight+PlayerP.z;
-            
+            v3f TargetCamPoint = FirstPersonCamFinalPoint;
             ToFirstPersonCamTransition = CameraLerp(&Camera->P, &TargetCamPoint);
         }
         
         else
         {
-            Camera->P.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
-            Camera->P.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
-            Camera->P.z = GunHeight + PlayerP.z;
+            Camera->P = FirstPersonCamFinalPoint;
         }
         
         v3f PlayerLookingDir = V3f((PlayerP.x+CamHorizonDist*PlayerBases.yAxis.x), 
                                    (PlayerP.y+CamHorizonDist*PlayerBases.yAxis.y), 
-                                   ((PlayerP.z+PointingGun.z)+CamHorizonDist*PlayerBases.zAxis.z));
+                                   ((PlayerP.z+PointingGun.z)));
         
         gluLookAt(Camera->P.x, Camera->P.y, Camera->P.z, 
                   PlayerLookingDir.x, PlayerLookingDir.y, PlayerLookingDir.z, 
@@ -1242,11 +1203,6 @@ void CameraUpdate(camera *Camera)
     
     else if (Camera->Type == Camera_FirstPersonEye)
     {
-        v3f PointingGun;
-        PointingGun.x = 0;
-        PointingGun.y = PlayerP.y + 0.5 * (Game.Input.Mouse.Position.x-WindowWidth/2);
-        PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight/2;
-        
         float CamHorizonDist = 100.0;
         float FirstPersonCamOffset = 20.0;
         
@@ -1269,6 +1225,42 @@ void CameraUpdate(camera *Camera)
     
     else if (Camera->Type == Camera_ThirdPerson)
     {
+        
+        // NOTA: Código relativo ao tratamento da câmera em coordenadas cilindricas
+        float RelativeDistXTraveled = DistTraveledLastFrame.x / WindowWidth;
+        float RelativeDistYTraveled = DistTraveledLastFrame.y / WindowHeight;
+        float NewCameraPhi = CameraPerspectivePhi + PI * Camera->Sensitivity * RelativeDistYTraveled;
+        float NewCameraTheta = CameraPerspectiveTheta + PI * Camera->Sensitivity * RelativeDistXTraveled;
+        float PlayerAngle = Game.Player->Player.Transform.Rotation.z;
+        
+        if (CameraPerspMoved)
+        {
+            if ((NewCameraPhi > -PI/2) && 
+                (NewCameraPhi < 0))
+            {
+                CameraPerspectiveTheta += PI * Camera->Sensitivity * RelativeDistXTraveled;
+                CameraPerspectivePhi += PI * Camera->Sensitivity * RelativeDistYTraveled;
+            }
+            
+            GlobalLastXCoordinate = Game.Input.Mouse.Position.x;
+            GlobalLastYCoordinate = Game.Input.Mouse.Position.y;
+            
+            CameraPerspMoved = false;
+        }
+        
+        float CameraMotionVelocity = 0.8;
+        
+        if ((NewCameraTheta - PlayerAngle) >= -PI)
+        {
+            
+            CameraPerspectiveTheta -= CameraMotionVelocity * Game.Timing.deltaTime;
+        }
+        
+        else if (NewCameraTheta - PlayerAngle <= -2 * PI)
+        {
+            CameraPerspectiveTheta += CameraMotionVelocity * Game.Timing.deltaTime;
+        }
+        
         // NOTA: Câmera em terceira pessoa olhando para o jogador
         float CamBoundingSphereR = 120.0;
         
@@ -1318,13 +1310,17 @@ void CameraUpdate(camera *Camera)
 
 void Display(void)
 {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(ProgramId);
     
-    GLfloat LighPosition[] = {500.0, 500.0, 500.0, 1.0};
-    glLightfv(GL_LIGHT0, GL_POSITION, LighPosition);
+    float LightP[] = {500.0, 500.0, 500.0, 1.0};
+    glLightfv(GL_LIGHT0, GL_POSITION, LightP);
     
     v3f PlayerP = Game.Player->Player.Position;
-    v3f SpotlightDirection = Game.Player->Player.Bases.yAxis;
-    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, 70.0, 1};
+    bases PlayerBases = Game.Player->Player.Bases;
+    
+    v3f SpotlightDirection = PlayerBases.yAxis;
+    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, PlayerP.z + 70.0, 1};
     
     glLightfv(GL_LIGHT1, GL_POSITION, SpotlightOrigin.fv);
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, SpotlightDirection.fv);
@@ -1345,25 +1341,26 @@ void Display(void)
     //Game.Camera.Type = Camera_FirstPersonEye;
     //CameraUpdate(&Game.Camera);
     glLoadIdentity();
-    bases PlayerBases = Game.Player->Player.Bases;
     
     v3f CameraP = Game.Camera.P;
     v3f CameraUp = Game.Camera.Up;
-    v3f PointingGun;
-    PointingGun.x = 0;
-    PointingGun.y = PlayerP.y + 0.5 * (Game.Input.Mouse.Position.x-WindowWidth/2);
-    PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight/2;
     
     float CamHorizonDist = 100.0;
     float FirstPersonCamOffset = 20.0;
+    float EyeHeight = 80.0;
+    
+    v3f PointingGun;
+    PointingGun.x = 0;
+    PointingGun.y = PlayerP.y + 0.5 * (Game.Input.Mouse.Position.x-WindowWidth/2);
+    PointingGun.z = Game.Input.Mouse.Position.y+ EyeVisionHeight-WindowHeight/2;
     
     CameraP.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
     CameraP.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
-    CameraP.z = 80.0f;
+    CameraP.z = EyeHeight + PlayerP.z;
     
     v3f PlayerLookingDir = V3f((PlayerP.x+CamHorizonDist*PlayerBases.yAxis.x), 
                                (PlayerP.y+CamHorizonDist*PlayerBases.yAxis.y), 
-                               (PlayerP.z+CameraP.z));
+                               PointingGun.z);
     
     CameraUp.x = 0;
     CameraUp.y = 0;
@@ -2027,7 +2024,7 @@ GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path
     
     // Link the program
     printf("Linking program\n");
-    GLuint ProgramID = glCreateProgram();
+    uint ProgramID = glCreateProgram();
     glAttachShader(ProgramID, VertexShaderID);
     glAttachShader(ProgramID, FragmentShaderID);
     glLinkProgram(ProgramID);
@@ -2093,9 +2090,9 @@ int main(int argc, char **argv)
             
             glewInit();
             
-            float VertexData[] = {-1.0, -1.0, 1.0, 
-                1.0, -1.0, 1.0,
-                0.0, 1.0, 1.0};
+            float VertexData[] = {-100.0, -100.0, 10.0, 
+                100.0, -100.0, 10.0,
+                0.0, 100.0, 10.0};
             
             //NOTA: Vertex Array Object
             uint VertexArrayID;
@@ -2105,8 +2102,6 @@ int main(int argc, char **argv)
             
             // TODO: Shaders!!
             uint ProgramId = LoadShaders("codigo/vertex_shader.glsl", "codigo/fragment_shader.glsl");
-            //glUseProgram(ProgramId);
-            //glCreateShader();
             
             glutMainLoop();
             

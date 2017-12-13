@@ -119,27 +119,31 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Player.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
     
+    float LegTall = 60.0;
+    float TorsoTall = LegTall + 1.5 * Radius;
+    float ArmWidth = 60.0;
+    
     Entity->Player.Body.RightLeg.ColorFill = Green;
     Entity->Player.Body.RightLeg.Type = Shape_Box;
-    Entity->Player.Body.RightLeg.Origin = v3f{0.5f * Radius, 5, 20.5};
+    Entity->Player.Body.RightLeg.Origin = v3f{0.5f * Radius, 5, LegTall/2 + 0.5f};
     Entity->Player.Body.RightLeg.Box.Width = 12;
     Entity->Player.Body.RightLeg.Box.Height = 10;
-    Entity->Player.Body.RightLeg.Box.Depth = 40;
+    Entity->Player.Body.RightLeg.Box.Depth = LegTall;
     
     Entity->Player.Body.LeftLeg.ColorFill = Green;
     Entity->Player.Body.LeftLeg.Type = Shape_Box;
-    Entity->Player.Body.LeftLeg.Origin = v3f{-0.5f * Radius, -5, 20.5};
+    Entity->Player.Body.LeftLeg.Origin = v3f{-0.5f * Radius, -5, LegTall/2 + 0.5f};
     Entity->Player.Body.LeftLeg.Box.Width = 12;
     Entity->Player.Body.LeftLeg.Box.Height = 10;
-    Entity->Player.Body.LeftLeg.Box.Depth = 40;
+    Entity->Player.Body.LeftLeg.Box.Depth = LegTall;
     
     Entity->Player.Body.RightArm.ColorFill = Green;
     Entity->Player.Body.RightArm.Type = Shape_Box;
-    Entity->Player.Body.RightArm.Origin = v3f{1.3f * Radius, 0, 50};
-    Entity->Player.Body.RightArm.OffsetFromOrigin = V3f(0, 0, 10);
+    Entity->Player.Body.RightArm.Origin = v3f{1.2f * Radius, 0, 0.7f * TorsoTall};
+    Entity->Player.Body.RightArm.OffsetFromOrigin = V3f(0, 0, ArmWidth/2);
     Entity->Player.Body.RightArm.Box.Width = 10;
     Entity->Player.Body.RightArm.Box.Height = 10;
-    Entity->Player.Body.RightArm.Box.Depth = 30;
+    Entity->Player.Body.RightArm.Box.Depth = ArmWidth;
     
     float AngleToRotate = -PI / 2;
     Entity->Player.Body.RightArm.Transform.Rotation.x = AngleToRotate;
@@ -148,25 +152,29 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Player.Body.LeftArm.ColorFill = Green;
     Entity->Player.Body.LeftArm.Type = Shape_Box;
-    Entity->Player.Body.LeftArm.Origin = v3f{-1.3f * Radius, 0, 40};
+    Entity->Player.Body.LeftArm.Origin = v3f{-1.3f * Radius, 0, 0.7f * TorsoTall};
     Entity->Player.Body.LeftArm.OffsetFromOrigin = V3f(0, 10, 0);
     Entity->Player.Body.LeftArm.Box.Width = 10;
     Entity->Player.Body.LeftArm.Box.Height = 10;
-    Entity->Player.Body.LeftArm.Box.Depth = 30;
+    Entity->Player.Body.LeftArm.Box.Depth = ArmWidth;
     
     Entity->Player.ArmHeight = Entity->Player.Body.LeftArm.Origin.z;
     
     Entity->Player.Body.Torso.ColorFill = Green;
     Entity->Player.Body.Torso.Type = Shape_Box;
-    Entity->Player.Body.Torso.Origin = v3f{0.0f, 0.0f, 40.0};
+    Entity->Player.Body.Torso.Origin.x = 0.0;
+    Entity->Player.Body.Torso.Origin.y = 0.0;
+    Entity->Player.Body.Torso.Origin.z = LegTall;
     Entity->Player.Body.Torso.Box.Width = 2.0 * Radius;
-    Entity->Player.Body.Torso.Box.Height = 0.7 * Radius;
+    Entity->Player.Body.Torso.Box.Height = 1.2 * Radius;
     Entity->Player.Body.Torso.Box.Depth = 1.5 * Radius;
+    
+    float HeadZ = TorsoTall;
     
     Entity->Player.Body.Head.ColorFill = Green;
     Entity->Player.Body.Head.Type = Shape_Sphere;
     Entity->Player.Body.Head.Sphere.Radius = Radius;
-    Entity->Player.Body.Head.Origin = v3f{0.0f, 0.0f, 80.0};
+    Entity->Player.Body.Head.Origin = v3f{0.0f, 0.0f, HeadZ};
     
     return &Entity->Player;
 }
@@ -217,11 +225,11 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Enemy.Body.RightArm.ColorFill = Red;
     Entity->Enemy.Body.RightArm.Type = Shape_Box;
-    Entity->Enemy.Body.RightArm.Origin = v3f{1.3f * Radius, 0, 40};
+    Entity->Enemy.Body.RightArm.Origin = v3f{1.2f * Radius, 0, 40};
     Entity->Enemy.Body.RightArm.OffsetFromOrigin = V3f(0, 0, 15);
     Entity->Enemy.Body.RightArm.Box.Width = 10;
     Entity->Enemy.Body.RightArm.Box.Height = 10;
-    Entity->Enemy.Body.RightArm.Box.Depth = 30;
+    Entity->Enemy.Body.RightArm.Box.Depth = 50;
     
     Entity->Enemy.Body.RightArm.Bases.xAxis = v3f{1.0f, 0.0f, 0.0f};
     Entity->Enemy.Body.RightArm.Bases.yAxis = v3f{0.0f, 1.0f, 0.0f};
