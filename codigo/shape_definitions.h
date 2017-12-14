@@ -43,8 +43,8 @@ struct vertex
 
 struct sphere
 {
-    int VertexCount;
     float Radius;
+    int VertexCount;
     vertex *Vertex;
 };
 

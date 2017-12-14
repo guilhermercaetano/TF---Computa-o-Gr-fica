@@ -4,6 +4,7 @@
 
 #include<stdlib.h>
 
+// Para LoadShader()
 #include<string>
 #include<fstream>
 #include<vector>
@@ -71,14 +72,14 @@ inline void MovePlayerArm(entity_player *Player, v3f DesiredDirection)
     {
         if (AngleToTurnInDegrees > 45.0f)
         {
-            Player->Body.RightArm.Transform.Rotation.z = DegreesToRads(-45.0f);
-            RotateOrthonormalBases(&Player->Body.RightArm.Bases, DegreesToRads(-45.0f));
+            Player->Body.RightArm[0].Transform.Rotation.z = DegreesToRads(-45.0f);
+            RotateOrthonormalBases(&Player->Body.RightArm[0].Bases, DegreesToRads(-45.0f));
         }
         
         else
         {
-            Player->Body.RightArm.Transform.Rotation.z = -AngleToTurn;
-            RotateOrthonormalBases(&Player->Body.RightArm.Bases, -AngleToTurn);
+            Player->Body.RightArm[0].Transform.Rotation.z = -AngleToTurn;
+            RotateOrthonormalBases(&Player->Body.RightArm[0].Bases, -AngleToTurn);
         }
     }
     
@@ -86,14 +87,14 @@ inline void MovePlayerArm(entity_player *Player, v3f DesiredDirection)
     {
         if (AngleToTurnInDegrees > 45.0f)
         {
-            Player->Body.RightArm.Transform.Rotation.z = DegreesToRads(45.0f);
-            RotateOrthonormalBases(&Player->Body.RightArm.Bases, DegreesToRads(45.0f));
+            Player->Body.RightArm[0].Transform.Rotation.z = DegreesToRads(45.0f);
+            RotateOrthonormalBases(&Player->Body.RightArm[0].Bases, DegreesToRads(45.0f));
         }
         
         else
         {
-            Player->Body.RightArm.Transform.Rotation.z = AngleToTurn;
-            RotateOrthonormalBases(&Player->Body.RightArm.Bases, AngleToTurn);
+            Player->Body.RightArm[0].Transform.Rotation.z = AngleToTurn;
+            RotateOrthonormalBases(&Player->Body.RightArm[0].Bases, AngleToTurn);
         }
     }
 }
@@ -486,6 +487,8 @@ void UpdateAndDrawEntity(entity *Entity)
                 v3f ArmOrigin = CoordinateChange(Player->Bases.BaseMatrix, RightArmOrigin);
                 Player->RightArmDir = Game.Input.Mouse.Position - (Player->Position + ArmOrigin);
                 MovePlayerArm(Player, Player->RightArmDir);
+#else
+                printf("%.2f\n", Game.Input.Mouse.Position.y - WindowHeight*0.5f);
 #endif
                 
                 for (int i = 0; i < ArrayCount(Player->Body.Components); i++)
@@ -635,8 +638,10 @@ void UpdateAndDrawEntity(entity *Entity)
                 if (Entity->Enemy.CyclesToChangeFootDirection <= 0 && !Entity->Enemy.Jumping)
                 {
                     Entity->Enemy.CyclesToChangeFootDirection = 30;
-                    Entity->Enemy.Body.RightLeg.Origin.y *= -1;
-                    Entity->Enemy.Body.LeftLeg.Origin.y *= -1;
+                    Entity->Enemy.Body.RightLeg[0].Origin.y *= -1;
+                    Entity->Enemy.Body.LeftLeg[0].Origin.y *= -1;
+                    Entity->Enemy.Body.RightLeg[1].Origin.y *= -1;
+                    Entity->Enemy.Body.LeftLeg[1].Origin.y *= -1;
                 }
                 
                 // Padrão de movimentação dos inimigos
@@ -794,6 +799,19 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
                 Entity++;
             }
             
+#if 1
+            entity CentralCircle = {};
+            entity_header CentralCircleHeader = {};
+            CentralCircleHeader.Id = SVGC->Id;
+            CentralCircleHeader.Type = Entity_CenterLimit;;
+            CentralCircleHeader.Height = PixelsTall;
+            CentralCircleHeader.Origin = Center;
+            CentralCircleHeader.State = EntityState_Visible;
+            CentralCircle.Header = CentralCircleHeader;
+            CentralCircle.Static.Header = &CentralCircleHeader;
+            CentralCircle.Static.Origin = Center;
+            
+#endif
         }
         
         else if (strncmp(SVGC->Fill, "green", strlen("green")) == 0)
@@ -996,7 +1014,7 @@ TinyXMLParseConfigFile(TiXmlDocument Config)
 // adotar apenas uma referência para a origem
 inline v3f GetCanonicalCoordinates(float X, float Y, float Z)
 {
-    return (V3f(X, (WindowHeight - Y), 0.0));
+    return (V3f(X, (WindowHeight+EyeVisionHeight - Y), 0.0));
 }
 
 inline void DrawGame(arena Arena)
@@ -1167,7 +1185,7 @@ void CameraUpdate(camera *Camera)
         v3f PointingGun;
         PointingGun.x = 0;
         PointingGun.y = PlayerP.y + 0.5 * (Game.Input.Mouse.Position.x-WindowWidth/2);
-        PointingGun.z = Game.Input.Mouse.Position.y+EyeVisionHeight-WindowHeight/2;
+        PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight/2;
         
         // TODO: Corrigir a altura da arma
         float GunHeight = 70.0;
@@ -1225,7 +1243,6 @@ void CameraUpdate(camera *Camera)
     
     else if (Camera->Type == Camera_ThirdPerson)
     {
-        
         // NOTA: Código relativo ao tratamento da câmera em coordenadas cilindricas
         float RelativeDistXTraveled = DistTraveledLastFrame.x / WindowWidth;
         float RelativeDistYTraveled = DistTraveledLastFrame.y / WindowHeight;
@@ -1262,7 +1279,7 @@ void CameraUpdate(camera *Camera)
         }
         
         // NOTA: Câmera em terceira pessoa olhando para o jogador
-        float CamBoundingSphereR = 120.0;
+        float CamBoundingSphereR = 200.0;
         
         if (ToThirdPersonCamTransition)
         {
@@ -1320,7 +1337,8 @@ void Display(void)
     bases PlayerBases = Game.Player->Player.Bases;
     
     v3f SpotlightDirection = PlayerBases.yAxis;
-    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, PlayerP.z + 70.0, 1};
+    float SpotlightHeight = 70.0f;
+    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, PlayerP.z + SpotlightHeight, 1};
     
     glLightfv(GL_LIGHT1, GL_POSITION, SpotlightOrigin.fv);
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, SpotlightDirection.fv);
@@ -1351,8 +1369,8 @@ void Display(void)
     
     v3f PointingGun;
     PointingGun.x = 0;
-    PointingGun.y = PlayerP.y + 0.5 * (Game.Input.Mouse.Position.x-WindowWidth/2);
-    PointingGun.z = Game.Input.Mouse.Position.y+ EyeVisionHeight-WindowHeight/2;
+    PointingGun.y = PlayerP.y + 0.5f * (Game.Input.Mouse.Position.x-WindowWidth*0.5f);
+    PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight/2;
     
     CameraP.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
     CameraP.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
@@ -1360,7 +1378,7 @@ void Display(void)
     
     v3f PlayerLookingDir = V3f((PlayerP.x+CamHorizonDist*PlayerBases.yAxis.x), 
                                (PlayerP.y+CamHorizonDist*PlayerBases.yAxis.y), 
-                               PointingGun.z);
+                               PointingGun.z + PlayerP.z);
     
     CameraUp.x = 0;
     CameraUp.y = 0;
@@ -1428,7 +1446,7 @@ void ProcessMotion(int X, int Y)
         GlobalAllowPerspCameraToMove)
     {
         DistTraveledLastFrame.x = X - GlobalLastXCoordinate;
-        DistTraveledLastFrame.y = (WindowWidth - Y) - GlobalLastYCoordinate;
+        DistTraveledLastFrame.y = (WindowHeight+EyeVisionHeight - Y) - GlobalLastYCoordinate;
         CameraPerspMoved = true;
     }
 }
@@ -1456,25 +1474,20 @@ void ProcessMouseInput(int Button, int State, int X, int Y)
         }
     }
     
-#if 1
     else if (Button == GLUT_RIGHT_BUTTON)
     {
-        
         if (State == GLUT_DOWN)
         {
             GlobalAllowPerspCameraToMove = true;
             GlobalLastXCoordinate = X;
-            GlobalLastYCoordinate = WindowWidth - Y;
+            GlobalLastYCoordinate = WindowWidth+EyeVisionHeight - Y;
         }
         
-#if 1
         else if (State == GLUT_UP)
         {
             GlobalAllowPerspCameraToMove = false;
         }
-#endif
     }
-#endif
     
     else
     {
@@ -1835,8 +1848,10 @@ inline void ProcessInput(input Input, entity_player *Player)
     
     if (ShotFired && !Player->Jumping && !Player->Dynamics.PlatformAllow)
     {
+        shape RightArm = Player->Body.RightArm[0];
         CreateBulletEntity(GlobalBullets, Entity_Player, 100, Player->ArmHeight, Player->ShotVelocity,
-                           Player->Bases, Player->Transform.Rotation, Player->Body.RightArm, Player->Position);
+                           Player->Bases, Player->Transform.Rotation, &RightArm,
+                           Player->Position);
         
         if ((GlobalBullets-SaveGlobalBullets) < 99)
         {
@@ -1853,8 +1868,11 @@ inline void ProcessInput(input Input, entity_player *Player)
     if (Player->CyclesToChangeFootDirection <= 0 && !Player->Jumping)
     {
         Player->CyclesToChangeFootDirection = 30;
-        Player->Body.RightLeg.Origin.y *= -1;
-        Player->Body.LeftLeg.Origin.y *= -1;
+        Player->Body.RightLeg[0].Origin.y *= -1;
+        Player->Body.LeftLeg[0].Origin.y *= -1;
+        
+        Player->Body.RightLeg[1].Origin.y *= -1;
+        Player->Body.LeftLeg[1].Origin.y *= -1;
     }
 }
 

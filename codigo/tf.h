@@ -80,13 +80,13 @@ typedef struct svg_header
 
 typedef union body
 {
-    shape Components[6];
+    shape Components[10];
     struct
     {
-        shape RightLeg;
-        shape LeftLeg;
-        shape RightArm;
-        shape LeftArm;
+        shape RightLeg[2];
+        shape LeftLeg[2];
+        shape RightArm[2];
+        shape LeftArm[2];
         shape Torso;
         shape Head;
     };
@@ -329,5 +329,8 @@ bool ToFirstPersonCamTransition = false;
 bool ToThirdPersonCamTransition = false;
 
 uint ProgramId;
+
+uint MinimapEntitiesCout = 0;
+entity MinimapEntities[100];
 
 #endif
