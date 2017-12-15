@@ -220,24 +220,36 @@ inline void OpenGLDrawCircle(circle *Circle, v3f Center)
 {
     glBegin(GL_TRIANGLE_FAN);
     {
+        float TextureScale = 1.0f;
+        
         glNormal3f(0,0,1);
         glTexCoord2f(0, 0);
         glVertex3f(Center.x, Center.y, Center.z);
         
         for (int i = 0; i < MaxCircleVertices; i++)
         {
-            glNormal3f(0,0,1);
-            glTexCoord2f(1.0 * Circle->TexelPoints[i].x, 1.0 * Circle->TexelPoints[i].y);
-            glVertex3f(Circle->Points[i].x + Center.x, 
-                       Circle->Points[i].y + Center.y, 
-                       Circle->Points[i].z + Center.z);
+            glNormal3f(Circle->Vertices[i].Normal.x,
+                       Circle->Vertices[i].Normal.y,
+                       Circle->Vertices[i].Normal.z);
+            
+            // TODO: Passar TextureScale como um parâmetro
+            
+            glTexCoord2f(TextureScale * Circle->Vertices[i].UVCoordinate.x, 
+                         TextureScale * Circle->Vertices[i].UVCoordinate.y);
+            
+            glVertex3f(Circle->Vertices[i].Coordinate.x + Center.x, 
+                       Circle->Vertices[i].Coordinate.y + Center.y, 
+                       Circle->Vertices[i].Coordinate.z + Center.z);
         }
         
-        glNormal3f(0,0,1);
-        glTexCoord2f(1.0 * Circle->TexelPoints[0].x, 1.0 * Circle->TexelPoints[0].y);
-        glVertex3f(Circle->Points[0].x + Center.x, 
-                   Circle->Points[0].y + Center.y, 
-                   Circle->Points[0].z + Center.z);
+        glNormal3f(Circle->Vertices[0].Normal.x,
+                   Circle->Vertices[0].Normal.y,
+                   Circle->Vertices[0].Normal.z);
+        glTexCoord2f(TextureScale * Circle->Vertices[0].UVCoordinate.x, 
+                     TextureScale * Circle->Vertices[0].UVCoordinate.y);
+        glVertex3f(Circle->Vertices[0].Coordinate.x + Center.x, 
+                   Circle->Vertices[0].Coordinate.y + Center.y, 
+                   Circle->Vertices[0].Coordinate.z + Center.z);
     }
     glEnd();
 }
@@ -312,6 +324,89 @@ void DrawShape(shape *Shape, v3f Position, texture *Texture)
             {
                 OpenGLDrawSubdividedRect(&Shape->Rectangle, Position);
             } break;
+            
+            case Shape_Undefined:break;
+            
+            default:{ASSERT(0);};
+        }
+    }
+    glPopAttrib();
+    
+}
+
+void DrawShapeTree(shape_tree *ShapeTree, v3f Position)
+{
+    glPushAttrib(GL_ENABLE_BIT);
+    {
+        texture *Texture = ShapeTree->Header.Texture;
+        if (Texture)
+        {
+            SetMaterialAndTexture(Texture->Id, Texture->Material);
+        }
+        
+        else
+        {
+            glDisable(GL_LIGHTING);
+            glDisable(GL_TEXTURE_2D);
+            
+            v4f Color = {
+                Colors[ShapeTree->Header.ColorFill].x, 
+                Colors[ShapeTree->Header.ColorFill].y,
+                Colors[ShapeTree->Header.ColorFill].z,
+                1.0};
+            glColor3fv(Color.fv);
+        }
+        
+        switch(ShapeTree->Header.Type)
+        {
+            case Shape_Circle:
+            {
+                OpenGLDrawCircle(&ShapeTree->Content.Circle, Position);
+            } break;
+            
+            case Shape_Rectangle:
+            {
+                OpenGLDrawRect(&ShapeTree->Content.Rectangle, Position);
+            } break;
+            
+            case Shape_Ellipse:
+            {
+                OpenGLDrawEllipse(&ShapeTree->Content.Ellipse, Position);
+            } break;
+            
+            case Shape_Point:
+            {
+                glBegin(GL_QUADS);
+                {
+                    glVertex3f(Position.x-3, Position.y-3, Position.z);
+                    glVertex3f(Position.x+3, Position.y-3, Position.z);
+                    glVertex3f(Position.x+3, Position.y+3, Position.z);
+                    glVertex3f(Position.x-3, Position.y+3, Position.z);
+                }
+                glEnd();
+            } break;
+            
+            case Shape_Sphere:
+            {
+                OpenGLDrawSphere(&ShapeTree->Content.Sphere, Position);
+            } break;
+            
+            case Shape_Cylinder:
+            {
+                OpenGLDrawCylinder(&ShapeTree->Content.Cylinder, Position);
+            } break;
+            
+            case Shape_Box:
+            {
+                OpenGLDrawBox(&ShapeTree->Content.Box, Position);
+            } break;
+            
+            case Shape_SubdividedRectangle:
+            {
+                OpenGLDrawSubdividedRect(&ShapeTree->Content.Rectangle, Position);
+            } break;
+            
+            case Shape_Undefined:break;
             
             default:{ASSERT(0);};
         }

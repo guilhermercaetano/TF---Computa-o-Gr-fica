@@ -92,12 +92,19 @@ void CalcCircleVertices(circle *Circle, float Height)
         float NewXPosition = Circle->Radius * CosPhi;
         float NewYPosition = Circle->Radius * SinPhi;
         
-        Circle->Points[i].x = NewXPosition;
-        Circle->Points[i].y = NewYPosition;
-        Circle->Points[i].z = Height;
+        Circle->Vertices[i].Coordinate.x = NewXPosition;
+        Circle->Vertices[i].Coordinate.y = NewYPosition;
+        Circle->Vertices[i].Coordinate.z = Height;
         
-        Circle->TexelPoints[i].x = CosPhi;
-        Circle->TexelPoints[i].y = SinPhi;
+        Circle->Vertices[i].UVCoordinate.x = CosPhi;
+        Circle->Vertices[i].UVCoordinate.y = SinPhi;
+        
+        float InvNormals = 1.0f;
+        if (Circle->InvNormals) InvNormals = -1.0f;
+        
+        Circle->Vertices[i].Normal.x = 0 * InvNormals;
+        Circle->Vertices[i].Normal.y = 0 * InvNormals;
+        Circle->Vertices[i].Normal.z = 1 * InvNormals;
         
         Phi = ((float)(i+1) / MaxCircleVertices) * 2 * PI;
     }
@@ -399,6 +406,48 @@ void CalcShapePoints(shape *Shape, float Height)
             CalcCylinderPoints(&Shape->Cylinder, Height);
         } break;
         
+        case Shape_Undefined:
+        case Shape_Composed:break;
+        
+        default:{ASSERT(false);};
+    }
+}
+
+void CalcShapeTreePoints(shape_tree *Shape, float Height)
+{
+    switch(Shape->Header.Type)
+    {
+        case Shape_Ellipse:
+        {
+            CalcEllipsePoints(&Shape->Content.Ellipse, Height);
+        } break;
+        
+        case Shape_Circle:
+        {
+            CalcCircleVertices(&Shape->Content.Circle, Height);
+        } break;
+        
+        case Shape_Rectangle:
+        {
+            CalcRectVertices(&Shape->Content.Rectangle, Height);
+        } break;
+        
+        case Shape_Sphere:
+        {
+            CalcSpherePoints(&Shape->Content.Sphere, 10);
+        } break;
+        
+        case Shape_Box:
+        {
+            CalcBoxPoints(&Shape->Content.Box);
+        } break;
+        
+        case Shape_Cylinder:
+        {
+            CalcCylinderPoints(&Shape->Content.Cylinder, Height);
+        } break;
+        
+        case Shape_Undefined:
         case Shape_Composed:
         {
             

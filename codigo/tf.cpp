@@ -72,14 +72,14 @@ inline void MovePlayerArm(entity_player *Player, v3f DesiredDirection)
     {
         if (AngleToTurnInDegrees > 45.0f)
         {
-            Player->Body.RightArm[0].Transform.Rotation.z = DegreesToRads(-45.0f);
-            RotateOrthonormalBases(&Player->Body.RightArm[0].Bases, DegreesToRads(-45.0f));
+            Player->RightArm->Header.Transform.Rotation.z = DegreesToRads(-45.0f);
+            RotateOrthonormalBases(&Player->RightArm->Header.Bases, DegreesToRads(-45.0f));
         }
         
         else
         {
-            Player->Body.RightArm[0].Transform.Rotation.z = -AngleToTurn;
-            RotateOrthonormalBases(&Player->Body.RightArm[0].Bases, -AngleToTurn);
+            Player->RightArm->Header.Transform.Rotation.z = -AngleToTurn;
+            RotateOrthonormalBases(&Player->RightArm->Header.Bases, -AngleToTurn);
         }
     }
     
@@ -87,14 +87,14 @@ inline void MovePlayerArm(entity_player *Player, v3f DesiredDirection)
     {
         if (AngleToTurnInDegrees > 45.0f)
         {
-            Player->Body.RightArm[0].Transform.Rotation.z = DegreesToRads(45.0f);
-            RotateOrthonormalBases(&Player->Body.RightArm[0].Bases, DegreesToRads(45.0f));
+            Player->RightArm->Header.Transform.Rotation.z = DegreesToRads(45.0f);
+            RotateOrthonormalBases(&Player->RightArm->Header.Bases, DegreesToRads(45.0f));
         }
         
         else
         {
-            Player->Body.RightArm[0].Transform.Rotation.z = AngleToTurn;
-            RotateOrthonormalBases(&Player->Body.RightArm[0].Bases, AngleToTurn);
+            Player->RightArm->Header.Transform.Rotation.z = AngleToTurn;
+            RotateOrthonormalBases(&Player->RightArm->Header.Bases, AngleToTurn);
         }
     }
 }
@@ -126,12 +126,12 @@ entity_list * Collision(entity *Entity, shape CollisionShape)
             {
                 case Entity_Player:
                 {
-                    shape Shape = TargetEntity->Player.Body.Head;
+                    shape_tree Shape = *TargetEntity->Player.Head;
                     
                     v3f d = Entity->Header.Origin - TargetEntity->Header.Origin;
                     d.z = 0;
                     float dCenter = VectorSize(d);
-                    float dRadius = Shape.Sphere.Radius + CollisionShape.Circle.Radius;
+                    float dRadius = Shape.Content.Sphere.Radius + CollisionShape.Circle.Radius;
                     if (dCenter <= dRadius)
                     {
                         EntityList->Content = TargetEntity;
@@ -472,6 +472,21 @@ void EnemyCollisionZ(arena Arena, entity_enemy *Enemy)
     }
 }
 
+void ShapeDrawWithTexture(shape_tree *ShapeTree)
+{
+    v3f Position = ShapeTree->Header.Origin;
+    v3f AngleInRadians = ShapeTree->Header.Transform.Rotation;
+    
+    glTranslatef(Position.x, Position.y, Position.z);
+    v3f RotNormal = ShapeTree->Header.RotationNormal;
+    
+    glRotatef(RadsToDegrees(AngleInRadians.x), 1, 0, 0);
+    glRotatef(RadsToDegrees(AngleInRadians.y), 0, 1, 0);
+    glRotatef(RadsToDegrees(AngleInRadians.z), 0, 0, 1);
+    
+    DrawShapeTree(ShapeTree, ShapeTree->Header.OffsetFromOrigin);
+}
+
 void UpdateAndDrawEntity(entity *Entity)
 {
     switch(Entity->Header.Type)
@@ -488,18 +503,31 @@ void UpdateAndDrawEntity(entity *Entity)
                 Player->RightArmDir = Game.Input.Mouse.Position - (Player->Position + ArmOrigin);
                 MovePlayerArm(Player, Player->RightArmDir);
 #else
-                printf("%.2f\n", Game.Input.Mouse.Position.y - WindowHeight*0.5f);
+                v2f MouseScreenRel;
+                MouseScreenRel.x = Game.Input.Mouse.Position.x - WindowWidth*0.5f;
+                MouseScreenRel.y = Game.Input.Mouse.Position.y - WindowHeight*0.5f;
+                MouseScreenRel.x /= WindowWidth*0.5f;
+                MouseScreenRel.y /= WindowHeight*0.5f;
+                
+                Player->RightArm->Header.RotationNormal = V3f(0.0f, 0.0f, 1.0f);
+                Player->RightArm->Header.Transform.Rotation.x = PI * MouseScreenRel.y;
+                Player->RightArm->Header.Transform.Rotation.y = PI * MouseScreenRel.x;
+                
+                //Player->Body.RightArm[1].RotationNormal = V3f(0.0f, 0.0f, 1.0f);
+                //Player->Body.RightArm[1].Transform.Rotation.x = PI * MouseScreenRel.y;
+                //Player->Body.RightArm[1].Transform.Rotation.y = PI * MouseScreenRel.x;
+                
+                printf("x: %.2f\n", MouseScreenRel.x);
+                printf("y: %.2f\n", MouseScreenRel.y);
 #endif
                 
+                /*
                 for (int i = 0; i < ArrayCount(Player->Body.Components); i++)
                 {
                     float EntityRelHeight = 
                         Player->Position.z + Player->Body.Components[i].Origin.z;
-                    // TODO: Fazer a interpreação correta da coordenada z par a 
-                    // definição da geometria ????
-                    //CalcShapePoints(&Player->Body.Components[i], EntityRelHeight);
                     CalcShapePoints(&Player->Body.Components[i], 0.0f);
-                }
+                }*/
                 
                 Player->Velocity.x *= 0.7f;
                 Player->Velocity.y *= 0.7f;
@@ -507,6 +535,7 @@ void UpdateAndDrawEntity(entity *Entity)
             
             if (Entity->Header.State & EntityState_Visible)
             {
+#if 0
                 glPushMatrix();
                 v3f PlayerP = Entity->Player.Position;
                 v3f Scale = Entity->Player.Transform.Scale;
@@ -526,7 +555,7 @@ void UpdateAndDrawEntity(entity *Entity)
                     
                     glRotatef(RadsToDegrees(AngleInRadians.x), 1, 0, 0);
                     glRotatef(RadsToDegrees(AngleInRadians.y), 0, 1, 0);
-                    glRotatef(RadsToDegrees(AngleInRadians.z), 1, 0, 1);
+                    glRotatef(RadsToDegrees(AngleInRadians.z), 0, 0, 1);
                     
                     if (Component.Texture)
                     {
@@ -540,6 +569,18 @@ void UpdateAndDrawEntity(entity *Entity)
                     glPopMatrix();
                 }
                 glPopMatrix();
+#else
+                glPushMatrix();
+                
+                v3f PlayerP = Entity->Player.Position;
+                v3f Scale = Entity->Player.Transform.Scale;
+                float FacingAngle = RadsToDegrees(Entity->Player.Transform.Rotation.z);
+                OpenGLTRSTransform(PlayerP, FacingAngle, V3f(0, 0, 1), Scale);
+                
+                ShapeTreeWalk(Entity->Player.BodyTree, ShapeDrawWithTexture);
+                
+                glPopMatrix();
+#endif
             }
             
         } break;
@@ -705,7 +746,7 @@ void UpdateAndDrawEntity(entity *Entity)
         case Entity_Wall:
         case Entity_CenterLimit:
         {
-            DrawShape(&Entity->Static.Shape, Entity->Static.Origin, &WallTexture);
+            DrawShape(&Entity->Static.Shape, Entity->Static.Origin, Entity->Static.Shape.Texture);
         } break;
         
         case Entity_ShortObstacle:
@@ -739,7 +780,7 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
          CirclesCount > 0; SVGC++, 
          Entity++, CirclesCount--)
     {
-        
+        ASSERT(MinimapEntitiesCount < 100);
         if (strncmp(SVGC->Fill, "blue", strlen("blue")) == 0)
         {
             v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.0f};
@@ -769,8 +810,38 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
                 uint BaseId = SVGC->Id + 200;
                 uint Id = BaseId + (i / 30);
                 
-                CreateExternalWall(Entity, Id, Center, Cylinder);
+                CreateExternalWall(Entity, Id, Center, Cylinder, &WallTexture);
             }
+            
+            entity BackgroundCircle = {};
+            entity_header BackgroundCircleHeader = {};
+            BackgroundCircleHeader.Id = SVGC->Id;
+            BackgroundCircleHeader.Type = Entity_Background;;
+            BackgroundCircleHeader.Height = PixelsTall;
+            BackgroundCircleHeader.Origin = Center;
+            BackgroundCircleHeader.State = EntityState_Visible;
+            BackgroundCircle.Header = BackgroundCircleHeader;
+            BackgroundCircle.Static.Header = &BackgroundCircleHeader;
+            BackgroundCircle.Static.Origin = Center;
+            BackgroundCircle.Static.Shape.ColorFill = White;
+            BackgroundCircle.Static.Shape.Type = Shape_Circle;
+            BackgroundCircle.Static.Shape.Origin = Center;
+            BackgroundCircle.Static.Shape.Bases = 
+            {
+                V3f(1.0f, 0.0f, 0.0f), 
+                V3f(0.0f, 1.0f, 0.0f), 
+                V3f(0.0f, 0.0f, 1.0f)
+            };
+            
+            BackgroundCircle.Static.Shape.Transform = {};
+            BackgroundCircle.Static.Shape.Transform.Translation = {0.0f, 0.0f, 0.0f};
+            BackgroundCircle.Static.Shape.Transform.Rotation = {0.0f, 0.0f, 0.0f};
+            BackgroundCircle.Static.Shape.Transform.Scale = {0.5f, 0.5f, 0.5f};
+            
+            BackgroundCircle.Static.Shape.Circle.Radius = SVGC->Radius;
+            CalcShapePoints(&BackgroundCircle.Static.Shape, 0.1f);
+            
+            MinimapEntities[MinimapEntitiesCount++] = BackgroundCircle;
         }
         
         else if (strncmp(SVGC->Fill, "white", strlen("white")) == 0)
@@ -794,12 +865,11 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
                 uint BaseId = SVGC->Id + 300;
                 uint Id = BaseId + (i / 30);
                 
-                CreateInternalWall(Entity, Id, Center, Cylinder);
+                CreateInternalWall(Entity, Id, Center, Cylinder, &WallTexture);
                 Game.EntityCount++;
                 Entity++;
             }
             
-#if 1
             entity CentralCircle = {};
             entity_header CentralCircleHeader = {};
             CentralCircleHeader.Id = SVGC->Id;
@@ -810,14 +880,31 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             CentralCircle.Header = CentralCircleHeader;
             CentralCircle.Static.Header = &CentralCircleHeader;
             CentralCircle.Static.Origin = Center;
+            CentralCircle.Static.Shape.ColorFill = White;
+            CentralCircle.Static.Shape.Type = Shape_Circle;
+            CentralCircle.Static.Shape.Origin = Center;
+            CentralCircle.Static.Shape.Bases = 
+            {
+                V3f(1.0f, 0.0f, 0.0f), 
+                V3f(0.0f, 1.0f, 0.0f), 
+                V3f(0.0f, 0.0f, 1.0f)
+            };
             
-#endif
+            CentralCircle.Static.Shape.Transform = {};
+            CentralCircle.Static.Shape.Transform.Translation = {0.0f, 0.0f, 0.0f};
+            CentralCircle.Static.Shape.Transform.Rotation = {0.0f, 0.0f, 0.0f};
+            CentralCircle.Static.Shape.Transform.Scale = {0.5f, 0.5f, 0.5f};
+            
+            CentralCircle.Static.Shape.Circle.Radius = SVGC->Radius;
+            CalcShapePoints(&CentralCircle.Static.Shape, 0.1f);
+            
+            MinimapEntities[MinimapEntitiesCount++] = CentralCircle;
         }
         
         else if (strncmp(SVGC->Fill, "green", strlen("green")) == 0)
         {
             v3f Center = {SVGC->CenterX, SVGC->CenterY, 0.0f};
-            CreatePlayer(Entity, SVGC->Id, 10.0, SVGC->Radius, Center);
+            CreatePlayerTree(Entity, SVGC->Id, 10.0, SVGC->Radius, Center);
             Game.Player = Entity;
         }
         
@@ -1105,8 +1192,8 @@ void PrintText(GLfloat x, GLfloat y, const char * text, double r, double g, doub
     //Push to recover original PROJECTION MATRIX
     glPushMatrix();
     glLoadIdentity();
-    glOrtho(0, 1, 0, 1, -1, 1);
-    RasterChars(x, y, 0, text, r, g, b);    
+    glOrtho(0, 1, 0, 1, -2, 2);
+    RasterChars(x, y, 0, text, r, g, b);
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
 }
@@ -1155,7 +1242,7 @@ inline bool CameraLerp(v3f *Source, v3f *Dest)
 void CameraUpdate(camera *Camera)
 {
     glClearColor(0.0, 0.0, 0.0, 1.0);
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glLoadIdentity();
     
     ASSERT(Game.Player);
@@ -1163,7 +1250,7 @@ void CameraUpdate(camera *Camera)
     uint EnemiesDeadCount = Game.EnemyCount - EnemiesWithStateCount(EntityState_Active);
     char StringStatusEnemies[64];
     snprintf(StringStatusEnemies, 64, "Mortos: %u", EnemiesDeadCount);
-    PrintText(0.85, 0.95, StringStatusEnemies, 1, 0, 0);
+    PrintText(0.65, 0.65, StringStatusEnemies, 1, 0, 0);
     
     if ((EnemiesDeadCount == Game.EnemyCount) && !GameEndedWithVictory)
     {
@@ -1183,12 +1270,12 @@ void CameraUpdate(camera *Camera)
     if (Camera->Type == Camera_FirstPersonGun)
     {
         v3f PointingGun;
-        PointingGun.x = 0;
-        PointingGun.y = PlayerP.y + 0.5 * (Game.Input.Mouse.Position.x-WindowWidth/2);
-        PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight/2;
+        PointingGun.x = PlayerP.y + 2.0f * (Game.Input.Mouse.Position.x-WindowWidth*0.5f);
+        PointingGun.y = 0;
+        PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight*0.5f;
         
         // TODO: Corrigir a altura da arma
-        float GunHeight = 70.0;
+        float GunHeight = 50.0;
         
         float CamHorizonDist = 100.0;
         float FirstPersonCamOffset = 20.0;
@@ -1243,6 +1330,7 @@ void CameraUpdate(camera *Camera)
     
     else if (Camera->Type == Camera_ThirdPerson)
     {
+        
         // NOTA: Código relativo ao tratamento da câmera em coordenadas cilindricas
         float RelativeDistXTraveled = DistTraveledLastFrame.x / WindowWidth;
         float RelativeDistYTraveled = DistTraveledLastFrame.y / WindowHeight;
@@ -1303,26 +1391,68 @@ void CameraUpdate(camera *Camera)
                   Camera->Up.x,Camera->Up.y,Camera->Up.z);
     }
     
-#if 1
-    glViewport (0, 0, WindowWidth, WindowHeight); // a área que você quer desenhar
+}
+
+void DisplayEyeCamera()
+{
+    v3f PlayerP = Game.Player->Player.Position;
+    bases PlayerBases = Game.Player->Player.Bases;
+    float EyeHeight = 80.0;
+    float SpotlightHeight = 70.0f;
+    v3f SpotlightDirection = PlayerBases.yAxis;
+    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, PlayerP.z + SpotlightHeight, 1};
     
-    //glViewport (WindowHeight, 0, WindowWidth, WindowHeight); // a área que você quer desenhar
-    glMatrixMode (GL_PROJECTION);
+    glLightfv(GL_LIGHT1, GL_POSITION, SpotlightOrigin.fv);
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, SpotlightDirection.fv);
+    
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
     glLoadIdentity();
+    glViewport (0, WindowHeight, WindowWidth, EyeVisionHeight); // a área que você quer desenhar
+    gluPerspective(75, (float)WindowWidth/(float)(EyeVisionHeight), 1, 1000);
     
-    if (WindowWidth <= WindowHeight)
-    {
-        gluPerspective(75, (float)WindowHeight/(float)WindowWidth, 1, 2000);
-    }
-    
-    else
-    {
-        gluPerspective(75, (float)WindowWidth/(float)WindowHeight, 1, 2000);
-    }
-    
+    glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
-#endif
     
+    glLoadIdentity();
+    v3f CameraP = Game.Camera.P;
+    v3f CameraUp = Game.Camera.Up;
+    
+    float CamHorizonDist = 100.0;
+    float FirstPersonCamOffset = 20.0;
+    
+    v3f PointingGun;
+    PointingGun.x = 0;
+    PointingGun.y = PlayerP.y + 0.5f * (Game.Input.Mouse.Position.x-WindowWidth*0.5f);
+    PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight/2;
+    
+    CameraP.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
+    CameraP.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
+    CameraP.z = EyeHeight + PlayerP.z;
+    
+    v3f PlayerLookingDir = V3f((CameraP.x+CamHorizonDist*PlayerBases.yAxis.x), 
+                               (CameraP.y+CamHorizonDist*PlayerBases.yAxis.y), 
+                               CameraP.z);
+    
+    CameraUp.x = 0.0;
+    CameraUp.y = 0.0;
+    CameraUp.z = 1.0;
+    
+    gluLookAt(CameraP.x, CameraP.y, CameraP.z, 
+              PlayerLookingDir.x, PlayerLookingDir.y, PlayerLookingDir.z, 
+              CameraUp.x, CameraUp.y, CameraUp.z);
+    
+    DrawGame(Game.Arena);
+    
+    UpdateAndDrawEntity(Game.Player);
+    
+    for (int i = 0; i < GlobalBulletsCount; i++)
+    {
+        if (SaveGlobalBullets[i].Header.State & EntityState_Active)
+        {
+            UpdateAndDrawEntity(&SaveGlobalBullets[i]);
+        }
+    }
 }
 
 void Display(void)
@@ -1355,63 +1485,30 @@ void Display(void)
         }
     }
     
-    //camera_type SaveCameraType = Game.Camera.Type;
-    //Game.Camera.Type = Camera_FirstPersonEye;
-    //CameraUpdate(&Game.Camera);
+    DisplayEyeCamera();
+    
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
     glLoadIdentity();
+    glViewport (0, 0, WindowWidth, WindowHeight);
+    float NearPlane = -2;
+    float FarPlane = 2;
+    glOrtho(-WindowWidth, WindowWidth, 
+            -WindowHeight, WindowHeight, 
+            NearPlane, FarPlane);
     
-    v3f CameraP = Game.Camera.P;
-    v3f CameraUp = Game.Camera.Up;
+    glPushAttrib(GL_ENABLE_BIT);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
     
-    float CamHorizonDist = 100.0;
-    float FirstPersonCamOffset = 20.0;
-    float EyeHeight = 80.0;
-    
-    v3f PointingGun;
-    PointingGun.x = 0;
-    PointingGun.y = PlayerP.y + 0.5f * (Game.Input.Mouse.Position.x-WindowWidth*0.5f);
-    PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight/2;
-    
-    CameraP.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
-    CameraP.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
-    CameraP.z = EyeHeight + PlayerP.z;
-    
-    v3f PlayerLookingDir = V3f((PlayerP.x+CamHorizonDist*PlayerBases.yAxis.x), 
-                               (PlayerP.y+CamHorizonDist*PlayerBases.yAxis.y), 
-                               PointingGun.z + PlayerP.z);
-    
-    CameraUp.x = 0;
-    CameraUp.y = 0;
-    CameraUp.z = 1;
-    
-    gluLookAt(CameraP.x, CameraP.y, CameraP.z, 
-              PlayerLookingDir.x, PlayerLookingDir.y, PlayerLookingDir.z, 
-              CameraUp.x, CameraUp.y, CameraUp.z);
-    
-#if 1
-    glViewport (0, WindowHeight, WindowWidth, EyeVisionHeight); // a área que você quer desenhar
-    glMatrixMode (GL_PROJECTION);
-    glLoadIdentity();
-    
-    gluPerspective(75, (float)WindowWidth/(float)(EyeVisionHeight), 1, 2000);
-    
-    glMatrixMode(GL_MODELVIEW);
-#endif
-    
-    //Game.Camera.Type = SaveCameraType;
-    
-    DrawGame(Game.Arena);
-    
-    UpdateAndDrawEntity(Game.Player);
-    
-    for (int i = 0; i < GlobalBulletsCount; i++)
+    for (uint i = 0; i < MinimapEntitiesCount; i++)
     {
-        if (SaveGlobalBullets[i].Header.State & EntityState_Active)
-        {
-            UpdateAndDrawEntity(&SaveGlobalBullets[i]);
-        }
+        DrawShape(&MinimapEntities[i].Static.Shape, V3f(300.0, 300.0f, 0.0f), 0);
     }
     
+    glPopAttrib();
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
     
 #if DEBUG_PLAYER_LINE
     OpenGLDrawLine(Game.Player->Player.Position, 
@@ -1432,7 +1529,6 @@ void Display(void)
     OpenGLDrawLine(Game.Player->Player.Position + ArmOrigin + ArmOffset, 
                    Game.Input.Mouse.Position, Colors[Lime]);
 #endif
-    
     
     glutSwapBuffers();
 }
@@ -1542,19 +1638,7 @@ v3f UpdatePosition(v3f ddPos, v3f dPos, float deltaTime)
 
 void PlayerJump(entity_player *Player)
 {
-    
-#if 0
-    printf("Jump velocity: %.4f, Displ. z: %.4f, Radius: %.4f\n", 
-           Player->Velocity.z, 
-           Player->Position.z, 
-           Player->Body.Head.Sphere.Radius);
-    
-    printf("Torso z: %.4f\n", 
-           Player->Header->Origin.z + Player->Body.Torso.Origin.z);
-#endif
-    
     Player->Position.z = Player->Position.z + Player->Velocity.z * Game.Timing.deltaTime;
-    //Player->Position.z *= 1.03;
     Player->Header->Origin.z = Player->Position.z;
     
     float HeightToJump = fabs(JumpHeight + HeightWhenPressedJumpButton - Player->Position.z);
@@ -1615,7 +1699,7 @@ void MovePlayer(entity_player *Player)
                         v3f d = Player->Position + NewdeltaPos - Entity->Enemy.Position;
                         d.z = 0;
                         float dCenter = VectorSize(d);
-                        sphere Sphere = Player->Body.Head.Sphere; 
+                        sphere Sphere = Player->Head->Content.Sphere; 
                         float dRadius = Sphere.Radius + ToWallDist + Entity->Enemy.Body.Head.Sphere.Radius;
                         
                         if (dCenter <= dRadius)
@@ -1639,7 +1723,7 @@ void MovePlayer(entity_player *Player)
                         v3f d = Player->Position + NewdeltaPos - Entity->Static.Origin;
                         d.z = 0;
                         float dCenter = VectorSize(d);
-                        sphere Sphere = Player->Body.Head.Sphere; 
+                        sphere Sphere = Player->Head->Content.Sphere; 
                         float dRadius = Sphere.Radius + ToWallDist + Entity->Static.Shape.Circle.Radius;
                         
                         if (dCenter <= dRadius)
@@ -1661,7 +1745,7 @@ void MovePlayer(entity_player *Player)
                         v3f d = Player->Position + NewdeltaPos - Entity->Static.Origin;
                         d.z = 0;
                         float dCenter = VectorSize(d);
-                        sphere Sphere = Player->Body.Head.Sphere; 
+                        sphere Sphere = Player->Head->Content.Sphere; 
                         float dRadius = Sphere.Radius + ToWallDist + Entity->Static.Shape.Circle.Radius;
                         
                         if (dCenter <= dRadius)
@@ -1680,7 +1764,7 @@ void MovePlayer(entity_player *Player)
                     float ToWallDist = 10.0;
                     v3f d = Entity->Background.Origin - NewRelPos - Player->Position;
                     d.z = 0;
-                    float dCenter = VectorSize(d) + Player->Body.Head.Sphere.Radius;
+                    float dCenter = VectorSize(d) + Player->Head->Content.Sphere.Radius;
                     
                     if (dCenter + ToWallDist >= (Entity->Background.Shape.Rectangle.Width/2))
                     {
@@ -1748,7 +1832,7 @@ void PlayerCollisionZ(arena Arena, entity_player *Player)
         {
             v3f d = Player->Position - JumpingPlatform->Static.Origin;
             
-            float MinkowskiRadius = JumpingPlatform->Static.Shape.Circle.Radius + Player->Body.Head.Sphere.Radius;
+            float MinkowskiRadius = JumpingPlatform->Static.Shape.Circle.Radius + Player->Head->Content.Sphere.Radius;
             if (VectorSize(d) <= MinkowskiRadius)
             {
                 PlatformAllowFlag = true;
@@ -1848,7 +1932,7 @@ inline void ProcessInput(input Input, entity_player *Player)
     
     if (ShotFired && !Player->Jumping && !Player->Dynamics.PlatformAllow)
     {
-        shape RightArm = Player->Body.RightArm[0];
+        shape_tree RightArm = *Player->RightArm;
         CreateBulletEntity(GlobalBullets, Entity_Player, 100, Player->ArmHeight, Player->ShotVelocity,
                            Player->Bases, Player->Transform.Rotation, &RightArm,
                            Player->Position);
@@ -1868,11 +1952,11 @@ inline void ProcessInput(input Input, entity_player *Player)
     if (Player->CyclesToChangeFootDirection <= 0 && !Player->Jumping)
     {
         Player->CyclesToChangeFootDirection = 30;
-        Player->Body.RightLeg[0].Origin.y *= -1;
-        Player->Body.LeftLeg[0].Origin.y *= -1;
+        Player->RightLeg->Header.Origin.y *= -1;
+        Player->LeftLeg->Header.Origin.y *= -1;
         
-        Player->Body.RightLeg[1].Origin.y *= -1;
-        Player->Body.LeftLeg[1].Origin.y *= -1;
+        //Player->Body.RightLeg[1].Origin.y *= -1;
+        //Player->Body.LeftLeg[1].Origin.y *= -1;
     }
 }
 
@@ -1911,7 +1995,7 @@ void Init()
     glShadeModel(GL_SMOOTH);
     
     // Precisa mesmo disso??
-    glEnable(GLUT_MULTISAMPLE);
+    //glEnable(GLUT_MULTISAMPLE);
     
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0); 
@@ -1935,6 +2019,7 @@ void Init()
     BulletTexture.Id = LoadTextureRAW("texture/sun1.bmp");
     FloorNormalTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128_normal.bmp");
     WallTexture.Id = LoadTextureRAW("texture/Stucco_pxr128_2.bmp");
+    HeadTexture.Id = LoadTextureRAW("texture/head.bmp");
     
     StandardMaterial.Emission = {0.05, 0.05, 0.05, 1};
     StandardMaterial.ColorA = {0.4, 0.4, 0.4, 1};
@@ -1945,6 +2030,7 @@ void Init()
     FloorTexture.Material = StandardMaterial;
     BulletTexture.Material = StandardMaterial;
     WallTexture.Material = StandardMaterial;
+    HeadTexture.Material = StandardMaterial;
     
     // Inicializacao da camera
     Game.Camera.Up = V3f(0.0, 0.0, 1.0);
@@ -1954,22 +2040,20 @@ void Init()
     
     glViewport (0, 0, WindowWidth, WindowHeight - EyeVisionHeight); // a área que você quer desenhar
     
-    //glViewport (WindowHeight, 0, WindowWidth, WindowHeight); // a área que você quer desenhar
     glMatrixMode (GL_PROJECTION);
     glLoadIdentity();
     
-    if (WindowWidth <= WindowHeight - EyeVisionHeight)
+    if (WindowWidth <= WindowHeight)
     {
-        gluPerspective(75, (float)WindowHeight/(float)(WindowWidth-EyeVisionHeight), 1, 2000);
+        gluPerspective(75, (float)WindowHeight/(float)(WindowWidth), 1, 2000);
     }
     
     else
     {
-        gluPerspective(75, (float)WindowWidth/(float)(WindowHeight-EyeVisionHeight), 1, 2000);
+        gluPerspective(75, (float)WindowWidth/(float)(WindowHeight), 1, 2000);
     }
     
     glMatrixMode(GL_MODELVIEW);
-    
 }
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path){

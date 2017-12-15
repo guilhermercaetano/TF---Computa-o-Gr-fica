@@ -23,6 +23,7 @@ struct texture
 
 typedef enum shape_type
 {
+    Shape_Undefined,
     Shape_Ellipse,
     Shape_Circle,
     Shape_Rectangle,
@@ -77,9 +78,9 @@ struct cylinder
 typedef struct circle
 {
     float Radius;
+    bool InvNormals;
     // TODO: Usar vértices para fazer o cálculo dos texels
-    v2f TexelPoints[MaxCircleVertices];
-    v3f Points[MaxCircleVertices];
+    vertex Vertices[MaxCircleVertices];
 } circle;
 
 typedef struct ellipse
@@ -99,6 +100,37 @@ typedef struct rectangle
     
     v3f Points[4];
 } rectangle;
+
+struct shape_header
+{
+    svg_color_names ColorFill;
+    shape_type Type;
+    v3f Origin;
+    v3f OffsetFromOrigin;
+    v3f RotationNormal;
+    bases Bases;
+    transform Transform;
+    texture *Texture;
+};
+
+union shape_content
+{
+    circle Circle;
+    ellipse Ellipse;
+    rectangle Rectangle;
+    sphere Sphere;
+    box Box;
+    cylinder Cylinder;
+};
+
+struct shape_tree
+{
+    shape_header Header;
+    shape_content Content;
+    
+    shape_tree *ChildrenLeft;
+    shape_tree *ChildrenRight;
+};
 
 struct shape
 {
@@ -122,5 +154,8 @@ struct shape
     };
     
 };
+
+bases OrthonormalBases;
+//OrthonormalBases. = ;
 
 #endif 

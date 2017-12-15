@@ -182,7 +182,15 @@ struct entity_player
     float SpinMagnitude;
     int CyclesToChangeFootDirection;
     bool Jumping;
-    body Body;
+    body Bodyp;
+    
+    //shape_tree Components[10]; TODO!!
+    shape_tree *BodyTree;
+    shape_tree *RightArm;
+    shape_tree *RightLeg;
+    shape_tree *LeftLeg;
+    shape_tree *Head;
+    
     game_dynamics Dynamics;
     bases Bases;
     transform Transform;
@@ -313,6 +321,7 @@ texture FloorTexture;
 texture BulletTexture;
 texture FloorNormalTexture;
 texture WallTexture;
+texture HeadTexture;
 
 bool GameEndedWithVictory = false;
 bool GameEndedWithFailure = false;
@@ -330,7 +339,7 @@ bool ToThirdPersonCamTransition = false;
 
 uint ProgramId;
 
-uint MinimapEntitiesCout = 0;
+uint MinimapEntitiesCount = 0;
 entity MinimapEntities[100];
 
 #endif
