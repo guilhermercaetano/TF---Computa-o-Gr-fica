@@ -207,3 +207,25 @@ v3f V3f(float x, float y, float z)
     
     return R;
 }
+
+v4f V4f(float x, float y, float z, float w)
+{
+    v4f R = {};
+    R.x = x;
+    R.y = y;
+    R.z = z;
+    R.w = w;
+    
+    return R;
+}
+
+m4 IdentityMat4()
+{
+    m4 M4 = {};
+    M4.a1 = V4f(1.0f, 0.0f, 0.0f, 0.0f);
+    M4.a2 = V4f(0.0f, 1.0f, 0.0f, 0.0f);
+    M4.a3 = V4f(0.0f, 0.0f, 1.0f, 0.0f);
+    M4.a4 = V4f(0.0f, 0.0f, 0.0f, 1.0f);
+    
+    return M4;
+}

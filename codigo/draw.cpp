@@ -1,4 +1,9 @@
 
+void DrawSkyBox()
+{
+    
+}
+
 // TODO: Mudar tamanho da textura
 inline void DrawImmVertex(vertex Vertex, v3f Origin)
 {
@@ -344,7 +349,7 @@ void DrawShapeTree(shape_tree *ShapeTree, v3f Position)
             SetMaterialAndTexture(Texture->Id, Texture->Material);
         }
         
-        else
+        else if (!ShapeTree->Header.BuiltinTexture)
         {
             glDisable(GL_LIGHTING);
             glDisable(GL_TEXTURE_2D);
@@ -404,6 +409,11 @@ void DrawShapeTree(shape_tree *ShapeTree, v3f Position)
             case Shape_SubdividedRectangle:
             {
                 OpenGLDrawSubdividedRect(&ShapeTree->Content.Rectangle, Position);
+            } break;
+            
+            case Shape_MeshObject:
+            {
+                Mesh.draw();
             } break;
             
             case Shape_Undefined:break;

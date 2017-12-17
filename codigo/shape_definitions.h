@@ -33,6 +33,7 @@ typedef enum shape_type
     Shape_Box,
     Shape_Cylinder,
     Shape_SubdividedRectangle,
+    Shape_MeshObject,
 } shape_type;
 
 struct vertex
@@ -101,6 +102,14 @@ typedef struct rectangle
     v3f Points[4];
 } rectangle;
 
+struct obj_mesh
+{
+    char *FilePath;
+    char *TextureFilePath;
+    
+    vertex *Vertex;
+};
+
 struct shape_header
 {
     svg_color_names ColorFill;
@@ -109,8 +118,10 @@ struct shape_header
     v3f OffsetFromOrigin;
     v3f RotationNormal;
     bases Bases;
+    m4 ModelViewMatrix;
     transform Transform;
     texture *Texture;
+    bool BuiltinTexture;
 };
 
 union shape_content
@@ -121,6 +132,7 @@ union shape_content
     sphere Sphere;
     box Box;
     cylinder Cylinder;
+    obj_mesh ObjMesh;
 };
 
 struct shape_tree
@@ -134,14 +146,22 @@ struct shape_tree
 
 struct shape
 {
-    svg_color_names ColorFill;
-    shape_type Type;
-    v3f Origin;
-    v3f OffsetFromOrigin;
-    v3f RotationNormal;
-    bases Bases;
-    transform Transform;
-    texture *Texture;
+    union 
+    {
+        struct
+        {
+            svg_color_names ColorFill;
+            shape_type Type;
+            v3f Origin;
+            v3f OffsetFromOrigin;
+            v3f RotationNormal;
+            bases Bases;
+            transform Transform;
+            texture *Texture;
+            bool BuiltinTexture;
+        };
+        shape_header Header;
+    };
     
     union
     {
@@ -151,6 +171,7 @@ struct shape
         sphere Sphere;
         box Box;
         cylinder Cylinder;
+        obj_mesh ObjMesh;
     };
     
 };

@@ -64,7 +64,8 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
 
 inline entity_bullet *
 CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float Height, 
-                   float ShotVelocity, bases EntityBases, v3f Rotation, shape *BodyPart, v3f Origin)
+                   float ShotVelocity, bases EntityBases, v3f Rotation, shape *BodyPart, 
+                   v3f Origin)
 {
     Entity->Bullet.VelocityMagnitude = ShotVelocity;
     
@@ -86,7 +87,7 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
     
     Entity->Bullet.Shape.ColorFill = Black;
     Entity->Bullet.Shape.Type = Shape_Circle;
-    Entity->Bullet.Shape.Sphere.Radius = 3;
+    Entity->Bullet.Shape.Circle.Radius = 5;
     Entity->Bullet.Shape.Origin = v3f{0.0f, 0.0f, Height};
     Entity->Bullet.CastingEntityType = CastingEntityType;
     
@@ -106,6 +107,7 @@ CreateInternalWall(entity *Entity, uint Id, v3f Origin, cylinder Cylinder, textu
     Entity->Static.Shape.Type = Shape_Cylinder;
     Entity->Static.Shape.Cylinder = Cylinder;
     Entity->Static.Shape.Transform.Translation = V3f(0, 0, 0);
+    Entity->Static.Shape.Transform.Scale = V3f(1.0f, 1.0f, 1.0f);
     Entity->Static.Shape.Texture = Texture;
     
     CalcShapePoints(&Entity->Static.Shape, 0.0);
@@ -123,6 +125,7 @@ CreateExternalWall(entity *Entity, uint Id, v3f Origin, cylinder Cylinder, textu
     Entity->Static.Shape.Type = Shape_Cylinder;
     Entity->Static.Shape.Cylinder = Cylinder;
     Entity->Static.Shape.Transform.Translation = V3f(0, 0, 0);
+    Entity->Static.Shape.Transform.Scale = V3f(1.0f, 1.0f, 1.0f);
     Entity->Static.Shape.Texture = Texture;
     
     CalcShapePoints(&Entity->Static.Shape, 0.0);
@@ -185,13 +188,12 @@ ShapeTreeWalk(shape_tree * Tree, void (*Operator)(shape_tree*))
     }
     
     glPushMatrix();
-    
-    Operator(Tree);
-    ShapeTreeWalk(Tree->ChildrenLeft, Operator);
-    ShapeTreeWalk(Tree->ChildrenRight, Operator);
-    
+    {
+        Operator(Tree);
+        ShapeTreeWalk(Tree->ChildrenLeft, Operator);
+        ShapeTreeWalk(Tree->ChildrenRight, Operator);
+    }
     glPopMatrix();
-    
     return;
 }
 
@@ -214,6 +216,45 @@ CreatePlayerTree(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     Entity->Player.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
     
+#if 0
+    Entity->Player.BodyTree = AllocBodyTree();
+    shape_tree *Pivot= Entity->Player.BodyTree;
+    
+    Pivot->ChildrenLeft = AllocBodyTree();
+    Pivot->ChildrenRight = AllocBodyTree();
+    shape_tree *UpperBody= Pivot->ChildrenLeft;
+    shape_tree *Pelvis = Pivot->ChildrenRight;
+    
+    UpperBody->ChildrenLeft = AllocBodyTree();
+    UpperBody->ChildrenRight = AllocBodyTree();
+    shape_tree *Head = UpperBody->ChildrenLeft;
+    shape_tree *Torso = UpperBody->ChildrenRight;
+    
+    Torso->ChildrenLeft = AllocBodyTree();
+    Torso->ChildrenRight = AllocBodyTree();
+    shape_tree *LeftArm = Torso->ChildrenLeft;
+    shape_tree *RightArm = Torso->ChildrenRight;
+    
+    RightArm->ChildrenLeft = AllocBodyTree();
+    shape_tree *RightHand = RightArm->ChildrenLeft;
+    
+    Pelvis->ChildrenLeft = AllocBodyTree();
+    Pelvis->ChildrenRight = AllocBodyTree();
+    shape_tree *LeftLeg = Pelvis->ChildrenLeft;
+    shape_tree *RightLeg = Pelvis->ChildrenRight;
+    
+    Pivot->Header.Type = Shape_Undefined;
+    Pivot->Header.Origin = v3f{0.0f, 0.0f, 0.0f};
+    Pivot->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    Pivot->Header.OffsetFromOrigin = V3f(0, 0, 0);
+    
+    UpperBody->Header.Type = Shape_Undefined;
+    UpperBody->Header.Origin = v3f{0.0f, 0.0f, 40.0f};
+    UpperBody->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    UpperBody->Header.OffsetFromOrigin = V3f(0, 0, 0);
+    
+#endif
+    
     Entity->Player.BodyTree = AllocBodyTree();
     shape_tree *Head = Entity->Player.BodyTree;
     
@@ -226,6 +267,9 @@ CreatePlayerTree(entity *Entity, int Id, float Height, float Radius, v3f Center)
     Torso->ChildrenRight = AllocBodyTree();
     shape_tree *LeftArm = Torso->ChildrenLeft;
     shape_tree *RightArm = Torso->ChildrenRight;
+    
+    RightArm->ChildrenLeft = AllocBodyTree();
+    shape_tree *RightHand = RightArm->ChildrenLeft;
     
     Pelvis->ChildrenLeft = AllocBodyTree();
     Pelvis->ChildrenRight = AllocBodyTree();
@@ -244,7 +288,7 @@ CreatePlayerTree(entity *Entity, int Id, float Height, float Radius, v3f Center)
     float OffsetX = 0.5f * Radius;
     float OffsetY = 5.0f;
     
-    float AngleToRotate = PI * 0.3f;
+    float AngleToRotate = PI * 0.5f;
     
     Head->Header.ColorFill = Green;
     Head->Header.Type = Shape_Sphere;
@@ -253,15 +297,17 @@ CreatePlayerTree(entity *Entity, int Id, float Height, float Radius, v3f Center)
     //Head->Header.Transform.Rotation.x = -PI;
     Head->Content.Sphere.Radius = Radius;
     Head->Header.Texture = &HeadTexture;
+    Head->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
     
     Torso->Header.ColorFill = Green;
     Torso->Header.Type = Shape_Box;
-    Torso->Header.Origin.x = 0.0;
-    Torso->Header.Origin.y = 0.0;
-    Torso->Header.Origin.z = -Radius-10.0f;
+    Torso->Header.Origin = V3f(0.0f, 0.0f, -40.0f);
+    Torso->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    Torso->Header.OffsetFromOrigin = V3f(0, 0, 0);
     Torso->Content.Box.Width = 2.0 * Radius;
     Torso->Content.Box.Height = 1.2 * Radius;
     Torso->Content.Box.Depth = 1.5 * Radius;
+    Torso->Header.Texture = &WallTexture;
     
     RightArm->Header.ColorFill = Green;
     RightArm->Header.Type = Shape_Box;
@@ -277,7 +323,171 @@ CreatePlayerTree(entity *Entity, int Id, float Height, float Radius, v3f Center)
     RightArm->Content.Box.Height = 10;
     RightArm->Content.Box.Depth = ArmWidth/2;
     
+    RightHand->Header.ColorFill = Green;
+    RightHand->Header.Type = Shape_MeshObject;
+    RightHand->Header.Origin = v3f{0.0f, 0, 0.0};
+    RightHand->Header.OffsetFromOrigin = V3f(0.0f, 0, 0);
+    RightHand->Header.RotationNormal = V3f(1, 0, 0);
+    RightHand->Header.Transform.Scale = v3f{0.5f, .5f, .5f};
+    RightHand->Header.Transform.Rotation.x = 0;
+    RightHand->Header.Transform.Rotation.y = -PI/2;
+    //RightHand->Header..Bases;
+    RightHand->Header.Texture = 0;
+    RightHand->Header.BuiltinTexture = true;
+    
     LeftArm->Header.ColorFill = Green;
+    LeftArm->Header.Type = Shape_Box;
+    LeftArm->Header.Origin = v3f{-1.2f * Radius, 0.0f, -10.0f};
+    LeftArm->Header.OffsetFromOrigin = V3f(0, 0, 0);
+    //LeftArm->Header.RotationNormal = V3f(1, 0, 0);
+    LeftArm->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    LeftArm->Header.Transform.Rotation.x = 0.0f;
+    //LeftArm->Header..Bases;
+    LeftArm->Header.Texture = 0;
+    
+    LeftArm->Content.Box.Width = 10;
+    LeftArm->Content.Box.Height = 10;
+    LeftArm->Content.Box.Depth = ArmWidth;
+    
+    Pelvis->Header.Type = Shape_Undefined;
+    Pelvis->Header.Origin = v3f{0, 0, -70.0f};
+    Pelvis->Header.OffsetFromOrigin = V3f(0, 0, 0);
+    Pelvis->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    
+    LeftLeg->Header.ColorFill = Green;
+    LeftLeg->Header.Type = Shape_Box;
+    LeftLeg->Header.Origin = v3f{OffsetX, OffsetY, 0.0f};
+    LeftLeg->Header.OffsetFromOrigin = V3f(0, 0, 0);
+    LeftLeg->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    LeftLeg->Content.Box.Width = 12;
+    LeftLeg->Content.Box.Height = 10;
+    LeftLeg->Content.Box.Depth = 30.0f;
+    
+    RightLeg->Header.ColorFill = Green;
+    RightLeg->Header.Type = Shape_Box;
+    RightLeg->Header.Origin = v3f{-OffsetX, -OffsetY, 0.0f};
+    RightLeg->Header.OffsetFromOrigin = V3f(0, 0, -0.1f);
+    RightLeg->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    RightLeg->Content.Box.Width = 12;
+    RightLeg->Content.Box.Height = 10.0f;
+    RightLeg->Content.Box.Depth = 30.0f;
+    
+    Entity->Player.ArmHeight = 70.0f;
+    
+    ShapeTreeWalk(Head, CalcShapeTreePoints);
+    
+    return &Entity->Player;
+}
+
+entity_enemy *
+CreateEnemyTree(entity *Entity, int Id, float Height, float Radius, v3f Center)
+{
+    FillEntityHeader(&Entity->Header, Id, 0x0F, Entity_Enemy, Height, Center);
+    
+    Entity->Enemy.Header = &Entity->Header;
+    Entity->Enemy.Position = Center;
+    Entity->Enemy.Transform.Translation = Center;
+    
+    Entity->Enemy.ShotVelocity = Game.ShotVelocity;
+    Entity->Enemy.VelocityMagnitude = Game.PlayerVelocity;
+    Entity->Enemy.SpinMagnitude = Game.PlayerVelocity / 90.0f;
+    
+    Entity->Enemy.Bases.xAxis = v3f{1.0f, 0.0f, 0.0f};
+    Entity->Enemy.Bases.yAxis = v3f{0.0f, 1.0f, 0.0f};
+    Entity->Enemy.Bases.zAxis = v3f{0.0f, 0.0f, 1.0f};
+    
+    Entity->Enemy.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    
+    Entity->Enemy.BodyTree = AllocBodyTree();
+    shape_tree *Head = Entity->Enemy.BodyTree;
+    
+    Head->ChildrenLeft = AllocBodyTree();
+    Head->ChildrenRight = AllocBodyTree();
+    shape_tree *Torso = Head->ChildrenLeft;
+    shape_tree *Pelvis = Head->ChildrenRight;
+    
+    Torso->ChildrenLeft = AllocBodyTree();
+    Torso->ChildrenRight = AllocBodyTree();
+    shape_tree *LeftArm = Torso->ChildrenLeft;
+    shape_tree *RightArm = Torso->ChildrenRight;
+    
+    RightArm->ChildrenLeft = AllocBodyTree();
+    shape_tree *RightHand = RightArm->ChildrenLeft;
+    
+    Pelvis->ChildrenLeft = AllocBodyTree();
+    Pelvis->ChildrenRight = AllocBodyTree();
+    shape_tree *LeftLeg = Pelvis->ChildrenLeft;
+    shape_tree *RightLeg = Pelvis->ChildrenRight;
+    
+    srand((uint)time(0)+Id*101);
+    float PiFraction = (rand() / 65536.0) * PI;
+    RotateOrthonormalBases(&Entity->Enemy.Bases, -PiFraction);
+    Entity->Enemy.Transform.Rotation.z = -PiFraction;
+    
+    Entity->Enemy.CyclesToChangeWalkingDirection = 180;
+    Entity->Enemy.CountToChangeWalkingDirection = 180;
+    
+    Entity->Enemy.Head = Head;
+    Entity->Enemy.RightArm = RightArm;
+    Entity->Enemy.RightLeg = RightLeg;
+    Entity->Enemy.LeftLeg = LeftLeg;
+    
+    float LegZ = 60.0;
+    float TorsoZ = LegZ + 1.5 * Radius;
+    float HeadZ = TorsoZ;
+    float ArmWidth = 50.0f;
+    float OffsetX = 0.5f * Radius;
+    float OffsetY = 5.0f;
+    
+    float AngleToRotate = PI * 0.5f;
+    
+    Head->Header.ColorFill = Red;
+    Head->Header.Type = Shape_Sphere;
+    Head->Header.Origin = v3f{0.0f, 0.0f, HeadZ};
+    //Head->Header.RotationNormal = V3f(0, 0, 1);
+    //Head->Header.Transform.Rotation.x = -PI;
+    Head->Content.Sphere.Radius = Radius;
+    Head->Header.Texture = &HeadTexture;
+    Head->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    Head->Header.Transform.Rotation = v3f{0.0f, 0.0f, -PiFraction};
+    
+    Torso->Header.ColorFill = Red;
+    Torso->Header.Type = Shape_Box;
+    Torso->Header.Origin.x = 0.0;
+    Torso->Header.Origin.y = 0.0;
+    Torso->Header.Origin.z = -Radius-10.0f;
+    Torso->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    Torso->Content.Box.Width = 2.0 * Radius;
+    Torso->Content.Box.Height = 1.2 * Radius;
+    Torso->Content.Box.Depth = 1.5 * Radius;
+    
+    RightArm->Header.ColorFill = Red;
+    RightArm->Header.Type = Shape_Box;
+    RightArm->Header.Origin = v3f{1.2f * Radius, 0.0f, 0.0};
+    RightArm->Header.OffsetFromOrigin = V3f(0, 0, -ArmWidth/4);
+    RightArm->Header.RotationNormal = V3f(1, 0, 0);
+    RightArm->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
+    RightArm->Header.Transform.Rotation.x = AngleToRotate;
+    //RightArm->Header..Bases;
+    RightArm->Header.Texture = 0;
+    
+    RightArm->Content.Box.Width = 10;
+    RightArm->Content.Box.Height = 10;
+    RightArm->Content.Box.Depth = ArmWidth/2;
+    
+    RightHand->Header.ColorFill = Red;
+    RightHand->Header.Type = Shape_MeshObject;
+    RightHand->Header.Origin = v3f{0.0f, 0, 0.0};
+    RightHand->Header.OffsetFromOrigin = V3f(0, 0, 0);
+    RightHand->Header.RotationNormal = V3f(1, 0, 0);
+    RightHand->Header.Transform.Scale = v3f{0.5f, .5f, .5f};
+    RightHand->Header.Transform.Rotation.x = 0;
+    RightHand->Header.Transform.Rotation.y = -PI/2;
+    //RightHand->Header..Bases;
+    RightHand->Header.Texture = 0;
+    RightHand->Header.BuiltinTexture = true;
+    
+    LeftArm->Header.ColorFill = Red;
     LeftArm->Header.Type = Shape_Box;
     LeftArm->Header.Origin = v3f{-1.2f * Radius, 0.0f, -10.0f};
     LeftArm->Header.OffsetFromOrigin = V3f(0, 0, 0);
@@ -300,29 +510,25 @@ CreatePlayerTree(entity *Entity, int Id, float Height, float Radius, v3f Center)
     LeftLeg->Header.Type = Shape_Box;
     LeftLeg->Header.Origin = v3f{OffsetX, OffsetY, 0.0f};
     LeftLeg->Header.OffsetFromOrigin = V3f(0, 0, 0);
+    LeftLeg->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
     LeftLeg->Content.Box.Width = 12;
     LeftLeg->Content.Box.Height = 10;
     LeftLeg->Content.Box.Depth = 30.0f;
     
-    RightLeg->Header.ColorFill = Green;
+    RightLeg->Header.ColorFill = Red;
     RightLeg->Header.Type = Shape_Box;
     RightLeg->Header.Origin = v3f{-OffsetX, -OffsetY, 0.0f};
     RightLeg->Header.OffsetFromOrigin = V3f(0, 0, -Height/2);
+    RightLeg->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
     RightLeg->Content.Box.Width = 12;
     RightLeg->Content.Box.Height = 10.0f;
     RightLeg->Content.Box.Depth = 30.0f;
     
-    Entity->Player.ArmHeight = LeftArm->Header.Origin.z;
+    Entity->Enemy.ArmHeight = 70.0f;
     
-    CalcShapeTreePoints(Head, 0.0f);
-    CalcShapeTreePoints(Torso, 0.0f);
-    CalcShapeTreePoints(RightArm, 0.0f);
-    CalcShapeTreePoints(LeftArm, 0.0f);
-    CalcShapeTreePoints(LeftLeg, 0.0f);
-    CalcShapeTreePoints(RightLeg, 0.0f);
-    CalcShapeTreePoints(Pelvis, 0.0f);
+    ShapeTreeWalk(Head, CalcShapeTreePoints);
     
-    return &Entity->Player;
+    return &Entity->Enemy;
 }
 
 #if 0
@@ -415,6 +621,7 @@ CreatePlayer(entity *Entity, int Id, float Height, float Radius, v3f Center)
 
 #endif
 
+#if 0
 entity_enemy *
 CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
 {
@@ -490,6 +697,8 @@ CreateEnemy(entity *Entity, int Id, float Height, float Radius, v3f Center)
     
     return &Entity->Enemy;
 }
+
+#endif
 
 entity_background *
 CreateBackground(entity *Entity, int Id, float Height, float Radius, v3f Origin, 

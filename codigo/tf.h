@@ -43,6 +43,12 @@ typedef enum entity_type
     Entity_Bullet,
     Entity_Static,
     Entity_Wall,
+    
+    Entity_MiniPlayer,
+    Entity_MiniEnemy,
+    Entity_MiniPlatform,
+    
+    Entity_Gun,
 } entity_type;
 
 typedef enum entity_state
@@ -109,6 +115,16 @@ struct entity_header
     float Height;
     v3f Origin;
     uint State;
+    
+    //mini MiniEntity;
+};
+
+struct entity_gun
+{
+    entity_header *Header;
+    v3f Origin;
+    transform Transform;
+    shape Shape;
 };
 
 typedef struct entity_background
@@ -161,7 +177,13 @@ struct entity_enemy
     bool Jumping;
     game_dynamics Dynamics;
     
-    body Body;
+    //body Body;
+    shape_tree *BodyTree;
+    shape_tree *Head;
+    shape_tree *RightArm;
+    shape_tree *RightLeg;
+    shape_tree *LeftLeg;
+    
     bases Bases;
     transform Transform;
     
@@ -276,6 +298,16 @@ struct camera
     camera_type Type;
 };
 
+/*
+struct mini
+{
+    v3f Position;
+    entity_state State;
+    svg_colors ColorFill;
+    shape Shape;
+};
+*/
+
 typedef struct game
 {
     arena Arena;
@@ -298,7 +330,6 @@ typedef struct game
     float EnemyCountToShoot;
     float EnemyShotVelocity;
     float EnemyVelocity;
-    
     float ObstaclesHeight;
 } game;
 
@@ -338,8 +369,22 @@ bool ToFirstPersonCamTransition = false;
 bool ToThirdPersonCamTransition = false;
 
 uint ProgramId;
+uint Program2Id;
 
 uint MinimapEntitiesCount = 0;
 entity MinimapEntities[100];
+
+uint VAO, vbo;
+uint CubeTextureMap;
+uint CubeTextureMapLoc;
+uint ProjectionMatrixLoc;
+uint ModelViewMatrixLoc;
+
+uint VertexBuffer;
+
+mesh Mesh;
+
+float GunTurnX;
+float GunTurnY;
 
 #endif

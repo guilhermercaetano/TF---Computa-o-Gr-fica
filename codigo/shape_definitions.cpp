@@ -413,23 +413,23 @@ void CalcShapePoints(shape *Shape, float Height)
     }
 }
 
-void CalcShapeTreePoints(shape_tree *Shape, float Height)
+void CalcShapeTreePoints(shape_tree *Shape)
 {
     switch(Shape->Header.Type)
     {
         case Shape_Ellipse:
         {
-            CalcEllipsePoints(&Shape->Content.Ellipse, Height);
+            CalcEllipsePoints(&Shape->Content.Ellipse, 0.0f);
         } break;
         
         case Shape_Circle:
         {
-            CalcCircleVertices(&Shape->Content.Circle, Height);
+            CalcCircleVertices(&Shape->Content.Circle, 0.0f);
         } break;
         
         case Shape_Rectangle:
         {
-            CalcRectVertices(&Shape->Content.Rectangle, Height);
+            CalcRectVertices(&Shape->Content.Rectangle, 0.0f);
         } break;
         
         case Shape_Sphere:
@@ -444,7 +444,12 @@ void CalcShapeTreePoints(shape_tree *Shape, float Height)
         
         case Shape_Cylinder:
         {
-            CalcCylinderPoints(&Shape->Content.Cylinder, Height);
+            CalcCylinderPoints(&Shape->Content.Cylinder, 0);
+        } break;
+        
+        case Shape_MeshObject:
+        {
+            Mesh.draw();
         } break;
         
         case Shape_Undefined:
