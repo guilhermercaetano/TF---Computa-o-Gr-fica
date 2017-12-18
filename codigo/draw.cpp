@@ -26,7 +26,7 @@ void SetMaterialAndTexture(uint TextureId, material Material)
 
 void DrawSkyBox(v3f PlayerP)
 {
-    float Size = 400.0f;
+    float Size = 800.0f;
     glDepthMask(GL_FALSE);
     SetMaterialAndTexture(SkyTexture.Id, SkyTexture.Material);
     glPushMatrix();
@@ -35,19 +35,19 @@ void DrawSkyBox(v3f PlayerP)
     
     glNormal3f(0, 0, 0);
     glTexCoord2f(0.0f, 0.0f);
-    glVertex3f(-Size, -Size, 100.0f);
+    glVertex3f(-Size, -Size, 200.0f);
     
     glNormal3f(0, 0, 0);
     glTexCoord2f(1.0f, 0.0f);
-    glVertex3f(Size, -Size, 100.0f);
+    glVertex3f(Size, -Size, 200.0f);
     
     glNormal3f(0, 0, 0);
     glTexCoord2f(1.0f, 1.0f);
-    glVertex3f(Size, Size, 100.0f);
+    glVertex3f(Size, Size, 200.0f);
     
     glNormal3f(0, 0, 0);
     glTexCoord2f(0.0f, 1.0f);
-    glVertex3f(-Size, Size, 100.0f);
+    glVertex3f(-Size, Size, 200.0f);
     
     glEnd();
     glPopMatrix();

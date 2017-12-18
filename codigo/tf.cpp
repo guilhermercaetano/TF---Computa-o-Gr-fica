@@ -1473,9 +1473,9 @@ void Display(void)
     glMatrixMode(GL_MODELVIEW);
     
     glPushMatrix();
-    glTranslatef(150.0f, 300.0f, 0.0f);
+    glTranslatef(403.38983f, 701.69495f, 0.0f);
     glRotatef(90, 1, 0, 0);
-    glScalef(2.0f, 2.0f, 2.0f);
+    glScalef(5.0f, 5.0f, 5.0f);
     CrateMesh.draw();
     glPopMatrix();
     

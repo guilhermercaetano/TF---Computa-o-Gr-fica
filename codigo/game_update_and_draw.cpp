@@ -43,12 +43,17 @@ void CameraUpdate(camera *Camera)
         
         float AbsBulletAngle = BulletRot.z+Game.Player->Player.RightArm->Header.Transform.Rotation.z;
         
+        //glMatrixMode(GL_PROJECTION);
+        //glLoadIdentity();
         glRotatef(-FacingAngle, 0, 1, 0);
-        glRotatef(-RadsToDegrees(GunTurnY), 1, 0, 0);
+        //glRotatef(-RadsToDegrees(GunTurnY), 1, 0, 0);
+        glRotatef(-90, 1, 0, 0);
         glTranslatef(-xAxisOffset*PlayerBases.xAxis.x-FirstPersonCamOffset*PlayerBases.yAxis.x, 
                      -FirstPersonCamOffset*PlayerBases.yAxis.y-xAxisOffset*PlayerBases.xAxis.y, 
                      0);
         glTranslatef(-Camera->P.x, -Camera->P.y, -Camera->P.z);
+        //glMatrixMode(GL_MODELVIEW);
+        //glLoadIdentity();
     }
     
     else if (Camera->Type == Camera_ThirdPerson)
