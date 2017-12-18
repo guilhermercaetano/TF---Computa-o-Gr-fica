@@ -333,7 +333,7 @@ typedef struct game
     float ObstaclesHeight;
 } game;
 
-float JumpHeight = 40.0f;
+float JumpHeight = 60.0f;
 float HeightWhenPressedJumpButton = 0.0;
 
 uint WindowWidth = 500;
@@ -391,5 +391,8 @@ float GunTurnX;
 float GunTurnY;
 
 v3f CameraRotationNormal;
+
+bool DisableTexture = false;
+bool DisableLighting = false;
 
 #endif

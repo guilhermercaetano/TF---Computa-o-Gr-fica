@@ -1,9 +1,15 @@
 #ifndef SHAPE_DEFINITIONS_H
 #define SHAPE_DEFINITIONS_H
 
+#if GAME_RUN_SLOW
 #define MaxCircleVertices 600
 #define SHAPE_VERTICES 600
 #define MaxRectangleVertices 2000
+#else
+#define MaxCircleVertices 200
+#define SHAPE_VERTICES 200
+#define MaxRectangleVertices 500
+#endif
 
 struct material
 {

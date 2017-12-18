@@ -288,7 +288,7 @@ void DrawShape(shape *Shape, v3f Position, texture *Texture)
 {
     glPushAttrib(GL_ENABLE_BIT);
     {
-        if (Texture)
+        if (Texture && glIsEnabled(GL_TEXTURE_2D))
         {
             SetMaterialAndTexture(Texture->Id, Texture->Material);
         }

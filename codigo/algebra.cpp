@@ -163,6 +163,17 @@ m3x3 Transpose(m3x3 M)
     
 }
 
+m4 Transpose(m4 M)
+{
+    m4 Result = {
+        M.a11, M.a21, M.a31, M.a41,
+        M.a12, M.a22, M.a32, M.a42,
+        M.a13, M.a23, M.a33, M.a43,
+        M.a14, M.a24, M.a34, M.a44};
+    
+    return Result;
+}
+
 v3f CoordinateChange(m3x3 M, v3f V)
 {
     M = Transpose(M);

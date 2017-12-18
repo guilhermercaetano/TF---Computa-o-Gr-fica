@@ -29,51 +29,6 @@
 #include"draw.cpp"
 #include"entity_definitions.cpp"
 
-// NOTA: SkyBox
-float points[] = {
-    -10.0f,  10.0f, -10.0f,
-    -10.0f, -10.0f, -10.0f,
-    10.0f, -10.0f, -10.0f,
-    10.0f, -10.0f, -10.0f,
-    10.0f,  10.0f, -10.0f,
-    -10.0f,  10.0f, -10.0f,
-    
-    -10.0f, -10.0f,  10.0f,
-    -10.0f, -10.0f, -10.0f,
-    -10.0f,  10.0f, -10.0f,
-    -10.0f,  10.0f, -10.0f,
-    -10.0f,  10.0f,  10.0f,
-    -10.0f, -10.0f,  10.0f,
-    
-    10.0f, -10.0f, -10.0f,
-    10.0f, -10.0f,  10.0f,
-    10.0f,  10.0f,  10.0f,
-    10.0f,  10.0f,  10.0f,
-    10.0f,  10.0f, -10.0f,
-    10.0f, -10.0f, -10.0f,
-    
-    -10.0f, -10.0f,  10.0f,
-    -10.0f,  10.0f,  10.0f,
-    10.0f,  10.0f,  10.0f,
-    10.0f,  10.0f,  10.0f,
-    10.0f, -10.0f,  10.0f,
-    -10.0f, -10.0f,  10.0f,
-    
-    -10.0f,  10.0f, -10.0f,
-    10.0f,  10.0f, -10.0f,
-    10.0f,  10.0f,  10.0f,
-    10.0f,  10.0f,  10.0f,
-    -10.0f,  10.0f,  10.0f,
-    -10.0f,  10.0f, -10.0f,
-    
-    -10.0f, -10.0f, -10.0f,
-    -10.0f, -10.0f,  10.0f,
-    10.0f, -10.0f, -10.0f,
-    10.0f, -10.0f, -10.0f,
-    -10.0f, -10.0f,  10.0f,
-    10.0f, -10.0f,  10.0f
-};
-
 uint LoadTextureRAW(const char * Filename)
 {
     uint Texture;
@@ -581,15 +536,20 @@ void UpdateAndDrawEntity(entity *Entity)
                     XAbsRotation = (ArmRestAngleInRads + MaxRotationAngle);
                 }
                 
+                if (DotProduct(Player->Bases.yAxis, V3f(0, 1, 0)) < 0.0f)
+                {
+                    //XAbsRotation = ArmRestAngleInRads - MaxRotationAngle * MouseScreenRel.y;
+                }
+                
                 printf("%.3f\n", XAbsRotation);
                 
                 GunTurnX = YAbsRotation;
                 GunTurnY = XAbsRotation;
                 
                 static uint Movement = 0;
-                //Player->RightArm->Header.Transform.Rotation.x = 
-                //XAbsRotation + 0.02f*sinf(0.0001f*VectorSize(Game.Player->Player.Velocity)*Movement++);
-                Player->RightArm->Header.Transform.Rotation.x = XAbsRotation;
+                Player->RightArm->Header.Transform.Rotation.x = 
+                    XAbsRotation + 0.02f*sinf(0.0005f*VectorSize(Game.Player->Player.Velocity)*Movement++);
+                //Player->RightArm->Header.Transform.Rotation.x = XAbsRotation;
                 Player->RightArm->Header.Transform.Rotation.y = YAbsRotation;
                 //Player->RightArm->Header.Transform.Rotation.z = 0.1f;
                 
@@ -718,7 +678,8 @@ void UpdateAndDrawEntity(entity *Entity)
                 {
                     Entity->Enemy.CyclesToShoot = Game.EnemyCountToShoot;
                     //ASSERT(Entity->Enemy.Body.RightArm.Bases.Angle == 0);
-                    CreateBulletEntity(GlobalBullets, Entity_Enemy, 100, Entity->Enemy.Position.z + Entity->Enemy.ArmHeight, 
+                    CreateBulletEntity(GlobalBullets, Entity_Enemy, 100, 
+                                       Entity->Enemy.Position.z + Entity->Enemy.ArmHeight, 
                                        Entity->Enemy.ShotVelocity, Entity->Enemy.Bases, 
                                        Entity->Enemy.Transform.Rotation, Entity->Enemy.RightArm,
                                        Entity->Enemy.Position);
@@ -1403,7 +1364,7 @@ void DisplayEyeCamera()
     CameraP.z = EyeHeight + PlayerP.z; 
     
     glRotatef(-FacingAngle , 0, 1, 0);
-    glRotatef(-RadsToDegrees(GunTurnY), 1, 0, 0);
+    glRotatef(-90.0f, 1, 0, 0);
     glTranslatef(-FirstPersonCamOffset*PlayerBases.yAxis.x, 
                  -FirstPersonCamOffset*PlayerBases.yAxis.y, 
                  -FirstPersonCamOffset*PlayerBases.yAxis.z);
@@ -1635,6 +1596,33 @@ void ProcessKeyboard(unsigned char Key, int X, int Y)
             glEnable(GL_LIGHT1);
         }
     }
+    
+    if (Key == 't' || Key == 'T')
+    {
+        if (glIsEnabled(GL_TEXTURE_2D))
+        {
+            glDisable(GL_TEXTURE_2D);
+        }
+        
+        else
+        {
+            glEnable(GL_TEXTURE_2D);
+        }
+    }
+    
+    if (Key == 'l' || Key == 'L')
+    {
+        if (glIsEnabled(GL_LIGHTING))
+        {
+            glDisable(GL_LIGHTING);
+        }
+        
+        else 
+        {
+            glEnable(GL_LIGHTING);
+        }
+    }
+    
 }
 
 inline 
@@ -1935,10 +1923,10 @@ inline void ProcessInput(input Input, entity_player *Player)
     
     if (ShotFired)
     {
-        shape_tree RightArm = *Player->RightArm;
         v3f BulletRot = {Player->Transform.Rotation.x, Player->Transform.Rotation.y, Player->Transform.Rotation.z+GunTurnX};
-        CreateBulletEntity(GlobalBullets, Entity_Player, 100, Player->Position.z + Player->ArmHeight, Player->ShotVelocity,
-                           Player->Bases, BulletRot, &RightArm,
+        CreateBulletEntity(GlobalBullets, Entity_Player, 100, 
+                           Player->Position.z + Player->ArmHeight, Player->ShotVelocity,
+                           Player->Bases, BulletRot, Player->RightArm,
                            Player->Position);
         
         if ((GlobalBullets-SaveGlobalBullets) < 99)
@@ -2001,8 +1989,10 @@ void Init()
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0); 
     glEnable(GL_DEPTH_TEST);
+    
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_TEXTURE0);
+    
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     
     glEnableClientState(GL_VERTEX_ARRAY);

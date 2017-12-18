@@ -3,7 +3,7 @@ void CameraUpdate(camera *Camera)
 {
     glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glLoadIdentity();
+    //glLoadIdentity();
     
     ASSERT(Game.Player);
     
@@ -15,7 +15,7 @@ void CameraUpdate(camera *Camera)
     {
         float FacingAngle = RadsToDegrees(Game.Player->Player.Transform.Rotation.z+GunTurnX);
         
-        float GunHeight = 71.0;
+        float GunHeight = 80.0;
         
         float xAxisOffset = 20.0f;
         float FirstPersonCamOffset = 10.0f;
@@ -42,18 +42,50 @@ void CameraUpdate(camera *Camera)
             Game.Player->Player.Transform.Rotation.y, Game.Player->Player.Transform.Rotation.z+GunTurnX};
         
         float AbsBulletAngle = BulletRot.z+Game.Player->Player.RightArm->Header.Transform.Rotation.z;
+        float AbsYAngle = GunTurnY;
         
-        //glMatrixMode(GL_PROJECTION);
-        //glLoadIdentity();
+        m4 Matrix4 = Game.Player->Player.RightArm->Header.ModelViewMatrix;
+        m3 BaseMatrix = m3{
+            {cosf(AbsBulletAngle), 0, sinf(AbsBulletAngle)},
+            {0, 1, 0},
+            {-sinf(AbsBulletAngle), 0, cosf(AbsBulletAngle)}};
+        
+        m3 RotMatrixXPlane;
+        
+        // NOTA: Rotaciona bases em torno de x!
+        RotMatrixXPlane = {
+            1, 0, 0,
+            0, cosf(AbsYAngle-PI/2), -sinf(AbsYAngle-PI/2), 
+            0, sinf(AbsYAngle-PI/2), cosf(AbsYAngle-PI/2)
+        };
+        
+        m3 ResultMatrix = BaseMatrix * RotMatrixXPlane;
+        
+#if 1
+        
         glRotatef(-FacingAngle, 0, 1, 0);
-        //glRotatef(-RadsToDegrees(GunTurnY), 1, 0, 0);
-        glRotatef(-90, 1, 0, 0);
+        glRotatef(-90.0f, 1, 0, 0);
+        
         glTranslatef(-xAxisOffset*PlayerBases.xAxis.x-FirstPersonCamOffset*PlayerBases.yAxis.x, 
                      -FirstPersonCamOffset*PlayerBases.yAxis.y-xAxisOffset*PlayerBases.xAxis.y, 
                      0);
         glTranslatef(-Camera->P.x, -Camera->P.y, -Camera->P.z);
-        //glMatrixMode(GL_MODELVIEW);
-        //glLoadIdentity();
+        
+#else
+        m4 MVMatrix = Game.Player->Player.RightArm->Header.ModelViewMatrix;
+        gluLookAt(
+            Camera->P.x+xAxisOffset*PlayerBases.xAxis.x+FirstPersonCamOffset*PlayerBases.yAxis.x, 
+            Camera->P.y+xAxisOffset*PlayerBases.xAxis.y+FirstPersonCamOffset*PlayerBases.yAxis.y, 
+            Camera->P.z,
+            
+            Game.Player->Player.RightArm->Header.Bases.yAxis.x*100.0f, 
+            Game.Player->Player.RightArm->Header.Bases.yAxis.y*100.0f, 
+            Camera->P.z, 
+            
+            0, 0, 1);
+        
+        
+#endif
     }
     
     else if (Camera->Type == Camera_ThirdPerson)
@@ -84,7 +116,7 @@ void CameraUpdate(camera *Camera)
         float CameraMotionVelocity = 0.8;
         
         // NOTA: Câmera em terceira pessoa olhando para o jogador
-        float CamBoundingSphereR = 180.0;
+        float CamBoundingSphereR = 200.0;
         
         if (ToThirdPersonCamTransition)
         {
@@ -104,7 +136,7 @@ void CameraUpdate(camera *Camera)
         }
         
         gluLookAt(Camera->P.x, Camera->P.y, Camera->P.z,
-                  PlayerP.x, PlayerP.y, PlayerP.z + 100.0,
+                  PlayerP.x, PlayerP.y, PlayerP.z + 50.0,
                   Camera->Up.x,Camera->Up.y,Camera->Up.z);
     }
     
@@ -126,24 +158,14 @@ inline void UpdateLight(v3f PlayerP, bases PlayerBases)
         {0, 0, 1}};
     
     m3 RotMatrixXPlane;
-    if (DotProduct(V3f(0, 1, 0), PlayerBases.yAxis) < 0.0f)
-    {
-        // NOTA: Rotaciona bases em torno de x!
-        RotMatrixXPlane = {
-            1, 0, 0,
-            0, cosf(GunTurnY-PI/2), sinf(GunTurnY-PI/2), 
-            0, -sinf(GunTurnY-PI/2), cosf(GunTurnY-PI/2)
-        };
-    }
     
-    else
-    {
-        RotMatrixXPlane = {
-            1, 0, 0,
-            0, cosf(GunTurnY-PI/2), -sinf(GunTurnY-PI/2), 
-            0, sinf(GunTurnY-PI/2), cosf(GunTurnY-PI/2)
-        };
-    }
+    //if (DotProduct(V3f(0, 1, 0), PlayerBases.yAxis) < 0.0f)
+    
+    RotMatrixXPlane = {
+        1, 0, 0,
+        0, cosf(GunTurnY-PI/2), -sinf(GunTurnY-PI/2), 
+        0, sinf(GunTurnY-PI/2), cosf(GunTurnY-PI/2)
+    };
     
     m3 SpotlightMatrix = Matrix3 * RotMatrixXPlane;
     
@@ -151,7 +173,7 @@ inline void UpdateLight(v3f PlayerP, bases PlayerBases)
     
     CameraRotationNormal = CrossProduct(Game.Player->Player.Bases.xAxis, SpotlightDirection);
     
-    float SpotlightHeight = 69.0f;
+    float SpotlightHeight = 79.0f;
     v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, PlayerP.z + SpotlightHeight, 1};
     
     glLightfv(GL_LIGHT1, GL_POSITION, SpotlightOrigin.fv);
