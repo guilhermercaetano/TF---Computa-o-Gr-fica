@@ -353,6 +353,7 @@ texture BulletTexture;
 texture FloorNormalTexture;
 texture WallTexture;
 texture HeadTexture;
+texture SkyTexture;
 
 bool GameEndedWithVictory = false;
 bool GameEndedWithFailure = false;

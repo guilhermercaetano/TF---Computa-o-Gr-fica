@@ -1517,6 +1517,7 @@ void DisplayEyeCamera()
                  -FirstPersonCamOffset*PlayerBases.yAxis.z);
     glTranslatef(-CameraP.x, -CameraP.y, -CameraP.z);
     
+    DrawSkyBox(PlayerP);
     DrawGame(Game.Arena);
     
     UpdateAndDrawEntity(Game.Player);
@@ -1584,7 +1585,9 @@ void Display(void)
     CrateMesh.draw();
     glPopMatrix();
     
-    DrawSkyBox();
+    // NOTA: Céu
+    DrawSkyBox(PlayerP);
+    
     DrawGame(Game.Arena);
     UpdateAndDrawEntity(Game.Player);
     
@@ -1601,7 +1604,7 @@ void Display(void)
     
 #if 1
     
-    float LightP[] = {500.0, 500.0, 500.0, 1.0};
+    float LightP[] = {600.0, 600.0, 1500.0, 1.0};
     glLightfv(GL_LIGHT0, GL_POSITION, LightP);
     
     v3f BulletRot = {Game.Player->Player.Transform.Rotation.x, 
@@ -1736,9 +1739,11 @@ void ProcessKeyboard(unsigned char Key, int X, int Y)
         if (glIsEnabled(GL_LIGHT0))
         {
             glDisable(GL_LIGHT0);
+            SkyTexture.Material.Emission = {0.1f, 0.1f, 0.1f, 1};
         }
         else
         {
+            SkyTexture.Material.Emission = {0.9f, 0.9f, 0.9f, 1};
             glEnable(GL_LIGHT0);
         }
     }
@@ -2144,7 +2149,7 @@ void UpdateGame(int Value)
     PlayerCollisionZ(Game.Arena, &Game.Player->Player);
     
     
-#if 1
+#if 0
     float Angle = Game.Player->Player.Transform.Rotation.z;
     //m4 Rotate = rotate_y_deg(IdentityMat4(), -CamHeading);
     m4 Rotate = IdentityMat4();
@@ -2160,7 +2165,7 @@ void UpdateGame(int Value)
     //glUseProgram(0);
 #endif
     
-#if 1
+#if 0
     m4 ModelViewMatrix, ProjectionMatrix; 
     glGetFloatv(GL_MODELVIEW_MATRIX, ModelViewMatrix.fv);
     glGetFloatv(GL_PROJECTION_MATRIX, ProjectionMatrix.fv);
@@ -2235,6 +2240,7 @@ void Init()
     FloorNormalTexture.Id = LoadTextureRAW("texture/Beach_sand_pxr128_normal.bmp");
     WallTexture.Id = LoadTextureRAW("texture/Stucco_pxr128.bmp");
     HeadTexture.Id = LoadTextureRAW("texture/head.bmp");
+    SkyTexture.Id = LoadTextureRAW("texture/posy.bmp");
     
     StandardMaterial.Emission = {0.05, 0.05, 0.05, 1};
     StandardMaterial.ColorA = {0.4, 0.4, 0.4, 1};
@@ -2246,6 +2252,9 @@ void Init()
     BulletTexture.Material = StandardMaterial;
     WallTexture.Material = StandardMaterial;
     HeadTexture.Material = StandardMaterial;
+    
+    SkyTexture.Material = StandardMaterial;
+    SkyTexture.Material.Emission = {0.9f, 0.9f, 0.9f, 1};
     
     // Inicializacao da camera
     Game.Camera.Up = V3f(0.0, 0.0, 1.0);
@@ -2464,7 +2473,6 @@ int main(int argc, char **argv)
             glutPassiveMotionFunc(ProcessPassiveMotion);
             glutMotionFunc(ProcessMotion);
             glutTimerFunc(Game.Timing.deltaTimeMs, UpdateGame, 0);
-            
             
 #if 1
             glewInit();
