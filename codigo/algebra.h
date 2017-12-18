@@ -160,6 +160,7 @@ v3f Normalize(v3f);
 
 float VectorSize(v3f);
 float DotProduct(v3f, v3f);
+v3f CrossProduct(v3f, v3f);
 float Square(float);
 
 v3f V3f(float, float, float);

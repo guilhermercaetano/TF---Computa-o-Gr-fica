@@ -35,18 +35,6 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
 {
     Entity->Bullet.VelocityMagnitude = ShotVelocity;
     
-    v3f ArmOrigin = CoordinateChange(EntityBases.BaseMatrix, BodyPart->Header.Origin);
-    v3f ArmOffset01 = CoordinateChange(EntityBases.BaseMatrix, 
-                                       V3f(0, BodyPart->Content.Box.Depth, 0));
-    v3f ArmOffset = CoordinateChange(BodyPart->Header.Bases.BaseMatrix, ArmOffset01);
-    
-    Entity->Bullet.Position = Origin + ArmOrigin + ArmOffset;
-    
-    FillEntityHeader(&Entity->Header, Id,
-                     EntityState_Visible | EntityState_Active, 
-                     Entity_Bullet, Height, Entity->Bullet.Position);
-    
-    Entity->Bullet.Header = &Entity->Header;
     float AbsBulletAngle = Rotation.z + BodyPart->Header.Transform.Rotation.z;
     float AbsYAngle = PI/2;
     
@@ -82,6 +70,22 @@ CreateBulletEntity(entity *Entity, entity_type CastingEntityType, int Id, float 
     }
     
     Entity->Bullet.Bases.BaseMatrix = Entity->Bullet.Bases.BaseMatrix * RotMatrixXPlane;
+    
+    v3f ArmOrigin = CoordinateChange(EntityBases.BaseMatrix, BodyPart->Header.Origin);
+    v3f ArmOffset01 = CoordinateChange(EntityBases.BaseMatrix, 
+                                       V3f(0, BodyPart->Content.Box.Depth, 0));
+    v3f ArmOffset = {Entity->Bullet.Bases.yAxis.x * ArmOffset01.x,
+        Entity->Bullet.Bases.yAxis.y * ArmOffset01.y,
+        Entity->Bullet.Bases.yAxis.z * ArmOffset01.z};
+    
+    Entity->Bullet.Position = Origin + ArmOrigin + ArmOffset;
+    //Entity->Bullet.Position = Origin + ArmOrigin;
+    
+    FillEntityHeader(&Entity->Header, Id,
+                     EntityState_Visible | EntityState_Active, 
+                     Entity_Bullet, Height, Entity->Bullet.Position);
+    
+    Entity->Bullet.Header = &Entity->Header;
     
     Entity->Bullet.Shape.ColorFill = Black;
     Entity->Bullet.Shape.Type = Shape_Circle;
@@ -315,6 +319,7 @@ CreatePlayerTree(entity *Entity, int Id, float Height, float Radius, v3f Center)
     RightArm->Header.Origin = v3f{1.2f * Radius, 0.0f, 0.0};
     RightArm->Header.OffsetFromOrigin = V3f(0, 0, -ArmWidth/4);
     RightArm->Header.RotationNormal = V3f(1, 0, 0);
+    RightArm->Header.Bases.BaseMatrix = {{1.0,0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
     RightArm->Header.Transform.Scale = v3f{1.0f, 1.0f, 1.0f};
     RightArm->Header.Transform.Rotation.x = AngleToRotate;
     //RightArm->Header..Bases;

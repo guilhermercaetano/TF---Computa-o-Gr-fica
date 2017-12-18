@@ -188,6 +188,16 @@ float DotProduct(v3f V1, v3f V2)
     return Result;
 }
 
+v3f CrossProduct(v3f U, v3f V)
+{
+    v3f Result;
+    Result.x = U.y*V.z-U.z*V.y;
+    Result.y = U.z*V.x-U.x*V.z;
+    Result.z = U.x*V.y-U.y*V.x;
+    
+    return Result;
+}
+
 float DegreesToRads(float AngleInDegrees)
 {
     float Result = AngleInDegrees * 2 * Pi / 360;

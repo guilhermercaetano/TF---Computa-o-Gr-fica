@@ -374,6 +374,7 @@ uint Program2Id;
 
 uint MinimapEntitiesCount = 0;
 entity MinimapEntities[100];
+float MinimapReduxFactor = 4000.0f;
 
 uint VAO, vbo;
 uint CubeTextureMap;
@@ -388,5 +389,7 @@ mesh CrateMesh;
 
 float GunTurnX;
 float GunTurnY;
+
+v3f CameraRotationNormal;
 
 #endif
