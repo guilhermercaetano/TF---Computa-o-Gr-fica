@@ -79,6 +79,7 @@ struct cylinder
 typedef struct circle
 {
     float Radius;
+    float CollisionRadius;
     bool InvNormals;
     // TODO: Usar vértices para fazer o cálculo dos texels
     vertex Vertices[MaxCircleVertices];
@@ -121,6 +122,11 @@ struct shape_header
     m4 ModelViewMatrix;
     transform Transform;
     texture *Texture;
+    
+    v3f LocalTranslate;
+    v3f LocalRotate;
+    v3f LocalScale;
+    
     bool BuiltinTexture;
 };
 

@@ -383,6 +383,7 @@ uint ModelViewMatrixLoc;
 uint VertexBuffer;
 
 mesh Mesh;
+mesh CrateMesh;
 
 float GunTurnX;
 float GunTurnY;

@@ -377,11 +377,6 @@ void MoveEntity(entity *Entity, game_dynamics *Dynamics, v3f Velocity, shape_tre
             Entity->Enemy.Position.y = Entity->Header.Origin.y;
         }
     }
-    
-#if 0
-    printf("VX: %.6f\n", Entity->Enemy.Velocity.x);
-    printf("VY: %.6f\n\n", Entity->Enemy.Velocity.y);
-#endif
 }
 
 inline bool
@@ -535,7 +530,22 @@ void ShapeDrawWithTexture(shape_tree *ShapeTree)
     glRotatef(RadsToDegrees(AngleInRadians.z), 0, 0, 1);
     glScalef(Scale.x, Scale.y, Scale.z);
     glGetFloatv(GL_MODELVIEW_MATRIX, (float *)ShapeTree->Header.ModelViewMatrix.fv);
+    
+    glPushMatrix();
+    v3f LocalTranslate = ShapeTree->Header.LocalTranslate;
+    v3f LocalRotate = ShapeTree->Header.LocalRotate;
+    v3f LocalScale = ShapeTree->Header.LocalScale;
+    
+    glTranslatef(LocalTranslate.x, LocalTranslate.y, LocalTranslate.z);
+    glRotatef(LocalRotate.x, 1, 0, 0);
+    glRotatef(LocalRotate.y, 0, 1, 0);
+    glRotatef(LocalRotate.z, 0, 0, 1);
+#if 0
+    glScalef(LocalScale.x, LocalScale.y,LocalScale.z);
+#endif
+    
     DrawShapeTree(ShapeTree, ShapeTree->Header.OffsetFromOrigin);
+    glPopMatrix();
     //}
     //glPopMatrix();
 }
@@ -583,16 +593,8 @@ void UpdateAndDrawEntity(entity *Entity)
             if (Entity->Header.State & EntityState_Visible)
             {
                 bases PlayerBases = Game.Player->Player.Bases;
-                float xAxisOffset = 25.0f;
-                float FirstPersonCamOffset = 20.0f;
-                
                 glPushMatrix();
                 v3f PlayerP = Entity->Player.Position;
-                
-                v3f add;
-                add.x = xAxisOffset*PlayerBases.xAxis.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
-                add.y = FirstPersonCamOffset*PlayerBases.yAxis.y;
-                
                 v3f Scale = Entity->Player.Transform.Scale;
                 float FacingAngle = RadsToDegrees(Entity->Player.Transform.Rotation.z);
                 OpenGLTRSTransform(PlayerP, FacingAngle, V3f(0, 0, 1), Scale);
@@ -696,7 +698,7 @@ void UpdateAndDrawEntity(entity *Entity)
             
             if (Entity->Header.State & EntityState_Visible)
             {
-                DrawShape(&Entity->Bullet.Shape, Entity->Bullet.Position + V3f(0, 0, 30.0f), &BulletTexture);
+                DrawShape(&Entity->Bullet.Shape, Entity->Bullet.Position, &BulletTexture);
             }
         } break;
         
@@ -705,12 +707,13 @@ void UpdateAndDrawEntity(entity *Entity)
             if (Entity->Header.State & EntityState_Active)
             {
                 Entity->Enemy.CyclesToShoot--;
-                if (Entity->Enemy.CyclesToShoot == 0)
+                if (Entity->Enemy.CyclesToShoot <= 0)
                 {
                     Entity->Enemy.CyclesToShoot = Game.EnemyCountToShoot;
                     //ASSERT(Entity->Enemy.Body.RightArm.Bases.Angle == 0);
-                    CreateBulletEntity(GlobalBullets, Entity_Enemy, 100, Entity->Enemy.ArmHeight, 
-                                       Entity->Enemy.ShotVelocity, Entity->Enemy.Bases, Entity->Enemy.Transform.Rotation, Entity->Enemy.RightArm,
+                    CreateBulletEntity(GlobalBullets, Entity_Enemy, 100, Entity->Enemy.Position.z + Entity->Enemy.ArmHeight, 
+                                       Entity->Enemy.ShotVelocity, Entity->Enemy.Bases, 
+                                       Entity->Enemy.Transform.Rotation, Entity->Enemy.RightArm,
                                        Entity->Enemy.Position);
                     
                     if ((GlobalBullets-SaveGlobalBullets) < 99)
@@ -953,6 +956,7 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             MiniPlayer.Static.Shape.Transform.Scale = {1, 1, 1};
             
             MiniPlayer.Static.Shape.Circle.Radius = SVGC->Radius / 3000.0f;
+            MiniPlayer.Static.Shape.Circle.CollisionRadius = SVGC->Radius / 3000.0f;
             
             MinimapEntities[MinimapEntitiesCount++] = MiniPlayer;
         }
@@ -992,6 +996,7 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             MiniEnemy.Static.Shape.Transform.Scale = {1, 1, 1};
             
             MiniEnemy.Static.Shape.Circle.Radius = SVGC->Radius / 3000.0f;
+            MiniEnemy.Static.Shape.Circle.CollisionRadius = MiniEnemy.Static.Shape.Circle.Radius;
             
             MinimapEntities[MinimapEntitiesCount++] = MiniEnemy;
         }
@@ -1055,11 +1060,6 @@ SVGDefinitionsToEntities(svg_circle *SVGCircles, int CirclesCount)
             MinimapEntities[i].Static.Shape.Origin = MinimapEntities[i].Header.Origin;
             
             CalcShapePoints(&MinimapEntities[i].Static.Shape, 0.0f);
-            
-            printf("%.3f %.3f %.3f\n", 
-                   MinimapEntities[i].Static.Shape.Origin.x, 
-                   MinimapEntities[i].Static.Shape.Origin.y, 
-                   MinimapEntities[i].Static.Shape.Origin.z);
         }
     }
     
@@ -1384,19 +1384,14 @@ void CameraUpdate(camera *Camera)
     
     if (Camera->Type == Camera_FirstPersonGun)
     {
-        v3f PointingGun;
-        PointingGun.x = Game.Player->Player.RightArm->Header.ModelViewMatrix.a12 * 100.0f;
-        PointingGun.y = Game.Player->Player.RightArm->Header.ModelViewMatrix.a22 * 100.0f;
-        PointingGun.z = Game.Player->Player.RightArm->Header.ModelViewMatrix.a32 * 100.0f;
-        
         float FacingAngle = RadsToDegrees(Game.Player->Player.Transform.Rotation.z+GunTurnX);
+        printf("%.3f %.3f\n", FacingAngle, RadsToDegrees(GunTurnY));
         
         // TODO: Corrigir a altura da arma
-        float GunHeight = 70.0;
+        float GunHeight = 75.0;
         
-        float CamHorizonDist = 200.0;
-        float xAxisOffset = 24.0f;
-        float FirstPersonCamOffset = 5.0f;
+        float xAxisOffset = 18.0f;
+        float FirstPersonCamOffset = 17.0f;
         
         v3f FirstPersonCamFinalPoint;
         
@@ -1416,13 +1411,16 @@ void CameraUpdate(camera *Camera)
             Camera->P = FirstPersonCamFinalPoint;
         }
         
-        v3f PlayerLookingAt = V3f((Camera->P.x+PointingGun.x), 
-                                  (Camera->P.y+PointingGun.y), 
-                                  (Camera->P.z+PointingGun.z));
+        v3f BulletRot = {Game.Player->Player.Transform.Rotation.x, 
+            Game.Player->Player.Transform.Rotation.y, Game.Player->Player.Transform.Rotation.z+GunTurnX};
         
-        glRotatef(-FacingAngle , 0, 1, 0);
+        float AbsBulletAngle = BulletRot.z+Game.Player->Player.RightArm->Header.Transform.Rotation.z;
+        
+        glRotatef(-RadsToDegrees(AbsBulletAngle), 0, 1, 0);
         glRotatef(-RadsToDegrees(GunTurnY), 1, 0, 0);
-        glTranslatef(-xAxisOffset*PlayerBases.xAxis.x-FirstPersonCamOffset*PlayerBases.yAxis.x, -FirstPersonCamOffset*PlayerBases.yAxis.y-xAxisOffset*PlayerBases.xAxis.y, 0);
+        glTranslatef(-xAxisOffset*PlayerBases.xAxis.x-FirstPersonCamOffset*PlayerBases.yAxis.x, 
+                     -FirstPersonCamOffset*PlayerBases.yAxis.y-xAxisOffset*PlayerBases.xAxis.y, 
+                     0);
         glTranslatef(-Camera->P.x, -Camera->P.y, -Camera->P.z);
         
     }
@@ -1475,7 +1473,7 @@ void CameraUpdate(camera *Camera)
         }
         
         gluLookAt(Camera->P.x, Camera->P.y, Camera->P.z,
-                  PlayerP.x, PlayerP.y, PlayerP.z + 50.0,
+                  PlayerP.x, PlayerP.y, PlayerP.z + 100.0,
                   Camera->Up.x,Camera->Up.y,Camera->Up.z);
     }
     
@@ -1491,32 +1489,33 @@ void DisplayEyeCamera()
     v3f CameraUp = Game.Camera.Up;
     
     float CamHorizonDist = 200.0;
-    float FirstPersonCamOffset = 20.0;
     
     v3f PointingGun;
     PointingGun.x = Game.Input.Mouse.Position.x-WindowWidth*0.5f;
     PointingGun.y = 0;
     PointingGun.z = Game.Input.Mouse.Position.y-WindowHeight*0.5f;
     
-    CameraP.x = PlayerP.x+FirstPersonCamOffset*PlayerBases.yAxis.x;
-    CameraP.y = PlayerP.y+FirstPersonCamOffset*PlayerBases.yAxis.y;
-    CameraP.z = EyeHeight + PlayerP.z;
-    
-    v3f PlayerLookingDir = V3f((CameraP.x+PointingGun.x+CamHorizonDist*PlayerBases.yAxis.x), 
-                               (CameraP.y+CamHorizonDist*PlayerBases.yAxis.y), 
-                               CameraP.z+PointingGun.z-40.0f);
-    
     CameraUp.x = 0.0;
     CameraUp.y = 0.0;
     CameraUp.z = 1.0;
     
     glViewport (0, WindowHeight, WindowWidth, EyeVisionHeight);
-    gluPerspective(75, (float)WindowWidth/(float)(EyeVisionHeight), 1, 2000);
+    gluPerspective(60, (float)WindowWidth/(float)(EyeVisionHeight), 1, 2000);
     glLoadIdentity();
     
-    gluLookAt(CameraP.x, CameraP.y, CameraP.z, 
-              PlayerLookingDir.x, PlayerLookingDir.y, PlayerLookingDir.z, 
-              CameraUp.x, CameraUp.y, CameraUp.z);
+    float FacingAngle = RadsToDegrees(Game.Player->Player.Transform.Rotation.z);
+    float FirstPersonCamOffset = 20.0f;
+    
+    CameraP.x = PlayerP.x;
+    CameraP.y = PlayerP.y;
+    CameraP.z = EyeHeight + PlayerP.z; 
+    
+    glRotatef(-FacingAngle , 0, 1, 0);
+    glRotatef(-RadsToDegrees(GunTurnY), 1, 0, 0);
+    glTranslatef(-FirstPersonCamOffset*PlayerBases.yAxis.x, 
+                 -FirstPersonCamOffset*PlayerBases.yAxis.y, 
+                 -FirstPersonCamOffset*PlayerBases.yAxis.z);
+    glTranslatef(-CameraP.x, -CameraP.y, -CameraP.z);
     
     DrawGame(Game.Arena);
     
@@ -1534,14 +1533,11 @@ void DisplayEyeCamera()
 inline void DisplayMinimap()
 {
     glMatrixMode(GL_PROJECTION);
-    //glPushMatrix();
     glLoadIdentity();
     
-    int NearPlane = -2;
-    int FarPlane = 2;
-    glOrtho(0, 1, 0, 1, -2, 2);
-    
-    //glPopMatrix();
+    int NearPlane = -1;
+    int FarPlane = 1;
+    glOrtho(0, 1, 0, 1, NearPlane, FarPlane);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
@@ -1550,7 +1546,6 @@ inline void DisplayMinimap()
     glDisable(GL_TEXTURE_2D);
     
     glColor3f(1,0,0);
-    //glRasterPos3f(0.3f, 0.3f, 0);
     
     for (uint i = 0; i < MinimapEntitiesCount; i++)
     {
@@ -1563,20 +1558,8 @@ void Display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    float LightP[] = {500.0, 500.0, 500.0, 1.0};
-    glLightfv(GL_LIGHT0, GL_POSITION, LightP);
-    
     v3f PlayerP = Game.Player->Player.Position;
     bases PlayerBases = Game.Player->Player.Bases;
-    
-#if 1
-    v3f SpotlightDirection = PlayerBases.yAxis;
-    float SpotlightHeight = 70.0f;
-    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, PlayerP.z + SpotlightHeight, 1};
-    
-    glLightfv(GL_LIGHT1, GL_POSITION, SpotlightOrigin.fv);
-    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, SpotlightDirection.fv);
-#endif
     
 #if 1
     glMatrixMode (GL_PROJECTION);
@@ -1584,15 +1567,22 @@ void Display(void)
     
     if (WindowWidth <= WindowHeight)
     {
-        gluPerspective(75, (float)WindowHeight/(float)(WindowWidth), 1, 2000);
+        gluPerspective(75, (float)WindowHeight/(float)(WindowWidth), 2, 2000);
     }
     
     else
     {
-        gluPerspective(75, (float)WindowWidth/(float)(WindowHeight), 1, 2000);
+        gluPerspective(75, (float)WindowWidth/(float)(WindowHeight), 2, 2000);
     }
     
     glMatrixMode(GL_MODELVIEW);
+    
+    glPushMatrix();
+    glTranslatef(150.0f, 300.0f, 0.0f);
+    glRotatef(90, 1, 0, 0);
+    glScalef(2.0f, 2.0f, 2.0f);
+    CrateMesh.draw();
+    glPopMatrix();
     
     DrawSkyBox();
     DrawGame(Game.Arena);
@@ -1608,6 +1598,26 @@ void Display(void)
 #endif
     
     DisplayEyeCamera();
+    
+#if 1
+    
+    float LightP[] = {500.0, 500.0, 500.0, 1.0};
+    glLightfv(GL_LIGHT0, GL_POSITION, LightP);
+    
+    v3f BulletRot = {Game.Player->Player.Transform.Rotation.x, 
+        Game.Player->Player.Transform.Rotation.y, Game.Player->Player.Transform.Rotation.z+GunTurnX};
+    
+    float AbsBulletAngle = BulletRot.z+Game.Player->Player.RightArm->Header.Transform.Rotation.z;
+    
+    v3f SpotlightDirection = {-sinf(AbsBulletAngle), cosf(AbsBulletAngle), 0};
+    
+    float SpotlightHeight = 68.0f;
+    v4f SpotlightOrigin = v4f{PlayerP.x, PlayerP.y, PlayerP.z + SpotlightHeight, 1};
+    
+    glLightfv(GL_LIGHT1, GL_POSITION, SpotlightOrigin.fv);
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, SpotlightDirection.fv);
+#endif
+    
     glViewport(0, 0, WindowWidth, WindowHeight);
     DisplayMinimap();
     
@@ -2042,11 +2052,12 @@ inline void ProcessInput(input Input, entity_player *Player)
         Game.Camera.Type = Camera_ThirdPerson;
     }
     
-    if (ShotFired && !Player->Jumping && !Player->Dynamics.PlatformAllow)
+    if (ShotFired && !Player->Jumping)
     {
         shape_tree RightArm = *Player->RightArm;
-        CreateBulletEntity(GlobalBullets, Entity_Player, 100, Player->ArmHeight, Player->ShotVelocity,
-                           Player->Bases, Player->Transform.Rotation+GunTurnX, &RightArm,
+        v3f BulletRot = {Player->Transform.Rotation.x, Player->Transform.Rotation.y, Player->Transform.Rotation.z+GunTurnX};
+        CreateBulletEntity(GlobalBullets, Entity_Player, 100, Player->Position.z + Player->ArmHeight, Player->ShotVelocity,
+                           Player->Bases, BulletRot, &RightArm,
                            Player->Position);
         
         if ((GlobalBullets-SaveGlobalBullets) < 99)
@@ -2084,10 +2095,9 @@ void UpdateMinimap()
                 MinimapEntities[i].Header.Origin = Center / 3000.0f;
                 MinimapEntities[i].Static.Origin = MinimapEntities[i].Header.Origin;
                 MinimapEntities[i].Static.Shape.Origin = MinimapEntities[i].Header.Origin;
+                MinimapEntities[i].Static.Shape.Circle.Radius = MinimapEntities[i].Static.Shape.Circle.CollisionRadius + 0.0003f*Game.Player->Player.Position.z;
                 
                 CalcShapePoints(&MinimapEntities[i].Static.Shape, 0.0f);
-                
-                //MinimapEntities[i] = MiniPlayer;
             } break;
             
             case Entity_MiniEnemy:
@@ -2101,6 +2111,7 @@ void UpdateMinimap()
                         MinimapEntities[i].Header.Origin = Center / 3000.0f;
                         MinimapEntities[i].Static.Origin = MinimapEntities[i].Header.Origin;
                         MinimapEntities[i].Static.Shape.Origin = MinimapEntities[i].Header.Origin;
+                        //MinimapEntities[i].Static.Shape.Circle.Radius = MinimapEntities[i].Static.Shape.Circle.CollisionRadius + 0.0001f*Game.Player->Enemy.Position.z;
                         
                         CalcShapePoints(&MinimapEntities[i].Static.Shape, 0.0f);
                     }
@@ -2110,7 +2121,7 @@ void UpdateMinimap()
                         
                     }
                 }
-            }
+            } break;
         }
     }
 }
@@ -2201,8 +2212,10 @@ void Init()
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     
     Mesh.loadMesh("model/shotgun.obj");
-    uint MeshTexture = LoadTextureRAW("texture/sg_diffuse.bmp");
     Mesh.loadMeshTex(LoadTextureRAW("texture/sg_diffuse.bmp"));
+    
+    CrateMesh.loadMesh("model/plataforma_blender.obj");
+    CrateMesh.loadMeshTex(LoadTextureRAW("texture/Beach_sand_pxr128.bmp"));
     
     float SpecularLight[] = {0.5, 0.5, 0.5, 1.0};
     glLightfv(GL_LIGHT1, GL_SPECULAR, SpecularLight);
@@ -2250,12 +2263,12 @@ void Init()
     
     if (WindowWidth <= WindowHeight)
     {
-        gluPerspective(75, (float)WindowHeight/(float)(WindowWidth), 1, 2000);
+        gluPerspective(75, (float)WindowHeight/(float)(WindowWidth), 2, 2000);
     }
     
     else
     {
-        gluPerspective(75, (float)WindowWidth/(float)(WindowHeight), 1, 2000);
+        gluPerspective(75, (float)WindowWidth/(float)(WindowHeight), 2, 2000);
     }
     
     glMatrixMode(GL_MODELVIEW);

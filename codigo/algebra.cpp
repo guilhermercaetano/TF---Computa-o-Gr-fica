@@ -122,6 +122,24 @@ v3f operator*(m3x3 M, v3f V)
     return Result;
 }
 
+m3 operator*(m3 M1, m3 M2)
+{
+    m3 Result;
+    Result.a11 = M1.a11*M2.a11+M1.a11*M2.a21+M1.a11*M2.a31;
+    Result.a12 = M1.a12*M2.a12+M1.a12*M2.a22+M1.a12*M2.a32;
+    Result.a13 = M1.a13*M2.a13+M1.a13*M2.a23+M1.a13*M2.a33;
+    
+    Result.a21 = M1.a21*M2.a11+M1.a22*M2.a21+M1.a23*M2.a31;
+    Result.a22 = M1.a21*M2.a12+M1.a22*M2.a22+M1.a23*M2.a32;
+    Result.a23 = M1.a21*M2.a13+M1.a22*M2.a23+M1.a23*M2.a33;
+    
+    Result.a31 = M1.a31*M2.a11+M1.a32*M2.a21+M1.a33*M2.a31;
+    Result.a32 = M1.a31*M2.a12+M1.a32*M2.a22+M1.a33*M2.a32;
+    Result.a33 = M1.a31*M2.a13+M1.a32*M2.a23+M1.a33*M2.a33;
+    
+    return Result;
+}
+
 v2f operator*(v2f V, float F)
 {
     v2f R;

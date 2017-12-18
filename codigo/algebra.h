@@ -147,6 +147,7 @@ v3f operator/(v3f V, float F);
 
 v3f operator*(m3x3, v3f);
 m3x3 Transpose(m3x3);
+m3 operator*(m3 M1, m3 M2);
 v3f CoordinateChange(m3x3, v3f);
 
 m3 IdentityMat3();
