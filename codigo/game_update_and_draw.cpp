@@ -15,7 +15,7 @@ void CameraUpdate(camera *Camera)
     {
         float FacingAngle = RadsToDegrees(Game.Player->Player.Transform.Rotation.z+GunTurnX);
         
-        float GunHeight = 80.0;
+        float GunHeight = 90.0;
         
         float xAxisOffset = 20.0f;
         float FirstPersonCamOffset = 10.0f;
@@ -38,31 +38,6 @@ void CameraUpdate(camera *Camera)
             Camera->P = FirstPersonCamFinalPoint;
         }
         
-        v3f BulletRot = {Game.Player->Player.Transform.Rotation.x, 
-            Game.Player->Player.Transform.Rotation.y, Game.Player->Player.Transform.Rotation.z+GunTurnX};
-        
-        float AbsBulletAngle = BulletRot.z+Game.Player->Player.RightArm->Header.Transform.Rotation.z;
-        float AbsYAngle = GunTurnY;
-        
-        m4 Matrix4 = Game.Player->Player.RightArm->Header.ModelViewMatrix;
-        m3 BaseMatrix = m3{
-            {cosf(AbsBulletAngle), 0, sinf(AbsBulletAngle)},
-            {0, 1, 0},
-            {-sinf(AbsBulletAngle), 0, cosf(AbsBulletAngle)}};
-        
-        m3 RotMatrixXPlane;
-        
-        // NOTA: Rotaciona bases em torno de x!
-        RotMatrixXPlane = {
-            1, 0, 0,
-            0, cosf(AbsYAngle-PI/2), -sinf(AbsYAngle-PI/2), 
-            0, sinf(AbsYAngle-PI/2), cosf(AbsYAngle-PI/2)
-        };
-        
-        m3 ResultMatrix = BaseMatrix * RotMatrixXPlane;
-        
-#if 1
-        
         glRotatef(-FacingAngle, 0, 1, 0);
         glRotatef(-90.0f, 1, 0, 0);
         
@@ -70,27 +45,10 @@ void CameraUpdate(camera *Camera)
                      -FirstPersonCamOffset*PlayerBases.yAxis.y-xAxisOffset*PlayerBases.xAxis.y, 
                      0);
         glTranslatef(-Camera->P.x, -Camera->P.y, -Camera->P.z);
-        
-#else
-        m4 MVMatrix = Game.Player->Player.RightArm->Header.ModelViewMatrix;
-        gluLookAt(
-            Camera->P.x+xAxisOffset*PlayerBases.xAxis.x+FirstPersonCamOffset*PlayerBases.yAxis.x, 
-            Camera->P.y+xAxisOffset*PlayerBases.xAxis.y+FirstPersonCamOffset*PlayerBases.yAxis.y, 
-            Camera->P.z,
-            
-            Game.Player->Player.RightArm->Header.Bases.yAxis.x*100.0f, 
-            Game.Player->Player.RightArm->Header.Bases.yAxis.y*100.0f, 
-            Camera->P.z, 
-            
-            0, 0, 1);
-        
-        
-#endif
     }
     
     else if (Camera->Type == Camera_ThirdPerson)
     {
-        
         // NOTA: Código relativo ao tratamento da câmera em coordenadas cilindricas
         float RelativeDistXTraveled = DistTraveledLastFrame.x / WindowWidth;
         float RelativeDistYTraveled = DistTraveledLastFrame.y / WindowHeight;

@@ -354,6 +354,7 @@ texture FloorNormalTexture;
 texture WallTexture;
 texture HeadTexture;
 texture SkyTexture;
+texture MilitaireTexture;
 
 bool GameEndedWithVictory = false;
 bool GameEndedWithFailure = false;

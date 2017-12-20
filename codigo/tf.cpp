@@ -29,6 +29,8 @@
 #include"draw.cpp"
 #include"entity_definitions.cpp"
 
+int AnimationFrameSequence = 0;
+
 uint LoadTextureRAW(const char * Filename)
 {
     uint Texture;
@@ -547,8 +549,17 @@ void UpdateAndDrawEntity(entity *Entity)
                 GunTurnY = XAbsRotation;
                 
                 static uint Movement = 0;
-                Player->RightArm->Header.Transform.Rotation.x = 
-                    XAbsRotation + 0.02f*sinf(0.0005f*VectorSize(Game.Player->Player.Velocity)*Movement++);
+                
+                if (!Player->Dynamics.Collision && VectorSize(Player->Velocity) >= 2.0f)
+                {
+                    Player->RightArm->Header.Transform.Rotation.x = 
+                        XAbsRotation + 0.02f*sinf(0.0005f*VectorSize(Game.Player->Player.Velocity)*Movement++);
+                }
+                else
+                {
+                    Player->RightArm->Header.Transform.Rotation.x = XAbsRotation;
+                }
+                
                 //Player->RightArm->Header.Transform.Rotation.x = XAbsRotation;
                 Player->RightArm->Header.Transform.Rotation.y = YAbsRotation;
                 //Player->RightArm->Header.Transform.Rotation.z = 0.1f;
@@ -1437,7 +1448,7 @@ void Display(void)
     glTranslatef(403.38983f, 701.69495f, 0.0f);
     glRotatef(90, 1, 0, 0);
     glScalef(5.0f, 5.0f, 5.0f);
-    CrateMesh.draw();
+    //CrateMesh.draw();
     glPopMatrix();
     
     // NOTA: Céu
@@ -1912,13 +1923,19 @@ inline void ProcessInput(input Input, entity_player *Player)
     
     if (Input.Keyboard['1'])
     {
-        ToFirstPersonCamTransition = true;
-        Game.Camera.Type = Camera_FirstPersonGun;
+        if (Game.Camera.Type != Camera_FirstPersonGun)
+        {
+            ToFirstPersonCamTransition = true;
+            Game.Camera.Type = Camera_FirstPersonGun;
+        }
     }
     else if (Input.Keyboard['2'])
     {
-        ToThirdPersonCamTransition = true;
-        Game.Camera.Type = Camera_ThirdPerson;
+        if (Game.Camera.Type != Camera_ThirdPerson)
+        {
+            ToThirdPersonCamTransition = true;
+            Game.Camera.Type = Camera_ThirdPerson;
+        }
     }
     
     if (ShotFired)
@@ -1946,9 +1963,16 @@ inline void ProcessInput(input Input, entity_player *Player)
         Player->CyclesToChangeFootDirection = 30;
         Player->RightLeg->Header.Origin.y *= -1;
         Player->LeftLeg->Header.Origin.y *= -1;
-        
         //Player->Body.RightLeg[1].Origin.y *= -1;
         //Player->Body.LeftLeg[1].Origin.y *= -1;
+    }
+    
+    else if (Player->Jumping)
+    {
+        Player->RightLeg->Header.Origin.y = 5.0f;
+        Player->RightLeg->Header.Origin.z = 10.3f;
+        Player->RightLeg->Header.Transform.Rotation.x = 0;
+        Player->RightLeg->ChildrenLeft->Header.Transform.Rotation.x = 0;
     }
 }
 
@@ -2023,6 +2047,7 @@ void Init()
     WallTexture.Id = LoadTextureRAW("texture/Stucco_pxr128.bmp");
     HeadTexture.Id = LoadTextureRAW("texture/head.bmp");
     SkyTexture.Id = LoadTextureRAW("texture/posy.bmp");
+    MilitaireTexture.Id = LoadTextureRAW("texture/militar.bmp");
     
     StandardMaterial.Emission = {0.05, 0.05, 0.05, 1};
     StandardMaterial.ColorA = {0.4, 0.4, 0.4, 1};
@@ -2034,6 +2059,7 @@ void Init()
     BulletTexture.Material = StandardMaterial;
     WallTexture.Material = StandardMaterial;
     HeadTexture.Material = StandardMaterial;
+    MilitaireTexture.Material = StandardMaterial;
     
     SkyTexture.Material = StandardMaterial;
     SkyTexture.Material.Emission = {1.0f, 1.0f, 1.0f, 1};

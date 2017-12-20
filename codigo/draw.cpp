@@ -174,16 +174,25 @@ void OpenGLDrawCylinder(cylinder *Cylinder, v3f Origin)
 
 void OpenGLDrawBox(box * Box, v3f Center)
 {
-    glBegin(GL_TRIANGLE_STRIP);
+    for (uint i = 0;i < 6;i++)
     {
-        for (int i = 0; i < 13; i++)
+        glBegin(GL_TRIANGLE_STRIP);
         {
-            glVertex3f(Box->Vertex[i].Coordinate.x + Center.x, 
-                       Box->Vertex[i].Coordinate.y + Center.y, 
-                       Box->Vertex[i].Coordinate.z + Center.z);
+            for (int j = 0; j < 4; j++)
+            {
+                glNormal3f(Box->Vertex[4*i+j].Normal.x,
+                           Box->Vertex[4*i+j].Normal.y,
+                           Box->Vertex[4*i+j].Normal.z);
+                glTexCoord2f(Box->Vertex[4*i+j].UVCoordinate.x,
+                             Box->Vertex[4*i+j].UVCoordinate.y);
+                glVertex3f(Box->Vertex[4*i+j].Coordinate.x + Center.x, 
+                           Box->Vertex[4*i+j].Coordinate.y + Center.y, 
+                           Box->Vertex[4*i+j].Coordinate.z + Center.z);
+            }
         }
+        glEnd();
     }
-    glEnd();
+    
 }
 
 void OpenGLDrawSubdividedRect(rectangle *Rectangle, v3f Center)

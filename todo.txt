@@ -1,4 +1,0 @@
-- Iluminação
-- Câmeras
-- Texturas
-

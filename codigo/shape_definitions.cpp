@@ -206,56 +206,163 @@ sphere* CalcSpherePoints(sphere *Sphere, float space)
 
 box * CalcBoxPoints(box * Box)
 {
+    // Face 1
+    
     Box->Vertex[0].Coordinate.x = -Box->Width/2;
     Box->Vertex[0].Coordinate.y = -Box->Height/2;
     Box->Vertex[0].Coordinate.z = -Box->Depth/2;
-    
-    Box->Vertex[12].Coordinate.x = -Box->Width/2;
-    Box->Vertex[12].Coordinate.y = -Box->Height/2;
-    Box->Vertex[12].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[0].UVCoordinate = {0, 0};
+    Box->Vertex[0].Normal = {0, -1, 0};
     
     Box->Vertex[1].Coordinate.x = Box->Width/2;
     Box->Vertex[1].Coordinate.y = -Box->Height/2;
     Box->Vertex[1].Coordinate.z = -Box->Depth/2;
-    Box->Vertex[5].Coordinate.x = Box->Width/2;
-    Box->Vertex[5].Coordinate.y = -Box->Height/2;
-    Box->Vertex[5].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[1].UVCoordinate = {1, 0};
+    Box->Vertex[1].Normal = {0, -1, 0};
     
     Box->Vertex[2].Coordinate.x = -Box->Width/2;
     Box->Vertex[2].Coordinate.y = Box->Height/2;
     Box->Vertex[2].Coordinate.z = -Box->Depth/2;
-    
-    Box->Vertex[10].Coordinate.x = -Box->Width/2;
-    Box->Vertex[10].Coordinate.y = Box->Height/2;
-    Box->Vertex[10].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[2].UVCoordinate = {0, 1};
+    Box->Vertex[2].Normal = {0, -1, 0};
     
     Box->Vertex[3].Coordinate.x = Box->Width/2;
     Box->Vertex[3].Coordinate.y = Box->Height/2;
     Box->Vertex[3].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[3].UVCoordinate = {1, 1};
+    Box->Vertex[3].Normal = {0, -1, 0};
+    
+    // Face 2
     
     Box->Vertex[4].Coordinate.x = Box->Width/2;
-    Box->Vertex[4].Coordinate.y = Box->Height/2;
-    Box->Vertex[4].Coordinate.z = Box->Depth/2;
+    Box->Vertex[4].Coordinate.y = -Box->Height/2;
+    Box->Vertex[4].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[4].UVCoordinate = {0, 0};
+    Box->Vertex[4].Normal = {1, 0, 0};
     
-    Box->Vertex[8].Coordinate.x = Box->Width/2;
-    Box->Vertex[8].Coordinate.y = Box->Height/2;
-    Box->Vertex[8].Coordinate.z = Box->Depth/2;
+    Box->Vertex[5].Coordinate.x = Box->Width/2;
+    Box->Vertex[5].Coordinate.y = -Box->Height/2;
+    Box->Vertex[5].Coordinate.z = Box->Depth/2;
+    Box->Vertex[5].UVCoordinate = {1, 0};
+    Box->Vertex[5].Normal = {1, 0, 0};
     
     Box->Vertex[6].Coordinate.x = Box->Width/2;
-    Box->Vertex[6].Coordinate.y = -Box->Height/2;
-    Box->Vertex[6].Coordinate.z = Box->Depth/2;
+    Box->Vertex[6].Coordinate.y = Box->Height/2;
+    Box->Vertex[6].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[6].UVCoordinate = {0, 1};
+    Box->Vertex[6].Normal = {1, 0, 0};
     
-    Box->Vertex[7].Coordinate.x = -Box->Width/2;
-    Box->Vertex[7].Coordinate.y = -Box->Height/2;
+    Box->Vertex[7].Coordinate.x = Box->Width/2;
+    Box->Vertex[7].Coordinate.y = Box->Height/2;
     Box->Vertex[7].Coordinate.z = Box->Depth/2;
+    Box->Vertex[7].UVCoordinate = {1, 1};
+    Box->Vertex[7].Normal = {1, 0, 0};
     
-    Box->Vertex[11].Coordinate.x = -Box->Width/2;
-    Box->Vertex[11].Coordinate.y = -Box->Height/2;
-    Box->Vertex[11].Coordinate.z = Box->Depth/2;
+    //Face 3
+    
+    Box->Vertex[8].Coordinate.x = Box->Width/2;
+    Box->Vertex[8].Coordinate.y = -Box->Height/2;
+    Box->Vertex[8].Coordinate.z = Box->Depth/2;
+    Box->Vertex[8].UVCoordinate = {0,0};
+    Box->Vertex[8].Normal = {0, 1, 0};
     
     Box->Vertex[9].Coordinate.x = -Box->Width/2;
-    Box->Vertex[9].Coordinate.y = Box->Height/2;
+    Box->Vertex[9].Coordinate.y = -Box->Height/2;
     Box->Vertex[9].Coordinate.z = Box->Depth/2;
+    Box->Vertex[9].UVCoordinate = {1, 0};
+    Box->Vertex[9].Normal = {0, 1, 0};
+    
+    Box->Vertex[10].Coordinate.x = Box->Width/2;
+    Box->Vertex[10].Coordinate.y = Box->Height/2;
+    Box->Vertex[10].Coordinate.z = Box->Depth/2;
+    Box->Vertex[10].UVCoordinate = {0, 1};
+    Box->Vertex[10].Normal = {0, 1, 0};
+    
+    Box->Vertex[11].Coordinate.x = -Box->Width/2;
+    Box->Vertex[11].Coordinate.y = Box->Height/2;
+    Box->Vertex[11].Coordinate.z = Box->Depth/2;
+    Box->Vertex[11].UVCoordinate = {1, 1};
+    Box->Vertex[11].Normal = {0, 1, 0};
+    
+    //Face 4
+    
+    Box->Vertex[12].Coordinate.x = -Box->Width/2;
+    Box->Vertex[12].Coordinate.y = -Box->Height/2;
+    Box->Vertex[12].Coordinate.z = Box->Depth/2;
+    Box->Vertex[12].UVCoordinate = {0, 0};
+    Box->Vertex[12].Normal = {-1, 0, 0};
+    
+    Box->Vertex[13].Coordinate.x = -Box->Width/2;
+    Box->Vertex[13].Coordinate.y = -Box->Height/2;
+    Box->Vertex[13].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[13].UVCoordinate = {1, 0};
+    Box->Vertex[13].Normal = {-1, 0, 0};
+    
+    Box->Vertex[14].Coordinate.x = -Box->Width/2;
+    Box->Vertex[14].Coordinate.y = Box->Height/2;
+    Box->Vertex[14].Coordinate.z = Box->Depth/2;
+    Box->Vertex[14].UVCoordinate = {0, 1};
+    Box->Vertex[14].Normal = {-1, 0, 0};
+    
+    Box->Vertex[15].Coordinate.x = -Box->Width/2;
+    Box->Vertex[15].Coordinate.y = Box->Height/2;
+    Box->Vertex[15].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[15].UVCoordinate = {1, 1};
+    Box->Vertex[15].Normal = {-1, 0, 0};
+    
+    // Face 5
+    
+    Box->Vertex[16].Coordinate.x = -Box->Width/2;
+    Box->Vertex[16].Coordinate.y = Box->Height/2;
+    Box->Vertex[16].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[16].UVCoordinate = {0, 0};
+    Box->Vertex[16].Normal = {0, 0, 1};
+    
+    Box->Vertex[17].Coordinate.x = Box->Width/2;
+    Box->Vertex[17].Coordinate.y = Box->Height/2;
+    Box->Vertex[17].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[17].UVCoordinate = {1, 0};
+    Box->Vertex[17].Normal = {0, 0, 1};
+    
+    Box->Vertex[18].Coordinate.x = -Box->Width/2;
+    Box->Vertex[18].Coordinate.y = Box->Height/2;
+    Box->Vertex[18].Coordinate.z = Box->Depth/2;
+    Box->Vertex[18].UVCoordinate = {0, 1};
+    Box->Vertex[18].Normal = {0, 0, 1};
+    
+    Box->Vertex[19].Coordinate.x = Box->Width/2;
+    Box->Vertex[19].Coordinate.y = Box->Height/2;
+    Box->Vertex[19].Coordinate.z = Box->Depth/2;
+    Box->Vertex[19].UVCoordinate = {1, 1};
+    Box->Vertex[19].Normal = {0, 0, 1};
+    
+    // Face 6
+    
+    Box->Vertex[20].Coordinate.x = -Box->Width/2;
+    Box->Vertex[20].Coordinate.y = -Box->Height/2;
+    Box->Vertex[20].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[20].UVCoordinate = {0, 0};
+    Box->Vertex[20].Normal = {0, 0, -1};
+    
+    Box->Vertex[21].Coordinate.x = Box->Width/2;
+    Box->Vertex[21].Coordinate.y = -Box->Height/2;
+    Box->Vertex[21].Coordinate.z = -Box->Depth/2;
+    Box->Vertex[21].UVCoordinate = {1, 0};
+    Box->Vertex[21].Normal = {0, 0, -1};
+    
+    Box->Vertex[22].Coordinate.x = -Box->Width/2;
+    Box->Vertex[22].Coordinate.y = -Box->Height/2;
+    Box->Vertex[22].Coordinate.z = Box->Depth/2;
+    Box->Vertex[22].UVCoordinate = {0, 1};
+    Box->Vertex[22].Normal = {0, 0, -1};
+    
+    Box->Vertex[23].Coordinate.x = Box->Width/2;
+    Box->Vertex[23].Coordinate.y = -Box->Height/2;
+    Box->Vertex[23].Coordinate.z = Box->Depth/2;
+    Box->Vertex[23].UVCoordinate = {1, 1};
+    Box->Vertex[23].Normal = {0, 0, -1};
+    
+    
 }
 
 // TODO: Esta é a forma mais simples e direta ao ponto de se calcular
